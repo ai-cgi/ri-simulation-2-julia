@@ -16,6 +16,11 @@ env_matrix = [[1 1 1 1 1 1 1 1 1 1]
 
 possible_actions = []
 
+final_state = Offset(3,10)
+
+"Collect rewards based on action"
+reward_action_dict = Dict("left" => 0, "right" => 0, "up" => 0, "down" => 0)
+
 # defining all rewards
 reward_1 = Reward(Offset(5,5), Offset(0,0),3)
 reward_2 = Reward(Offset(7,5), Offset(0,0),3)
@@ -28,6 +33,8 @@ reward_8 = Reward(Offset(3,10), Offset(0,0),100)
 
 # create reward list
 reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
+last_rewared = 0
+last_action = "up"
 
 # create agent
 agent_x = Agent(Offset(5,10), Offset(0,0),0)
@@ -83,21 +90,66 @@ function get_random_action()
  pos_actions[rand(1:length(pos_actions))]
 end
 
+"check if agent is in final state"
+function is_final_state()
+  equal_offset(agent_x.sim_offset,final_state)
+end
+
+"check if agent on current position get's a reward"
+function get_reward()
+  for i = 1:length(reward_list)
+    if equal_offset(reward_list[i].sim_offset,agent_x.sim_offset)
+      r = reward_list[i]
+      deleteat!(reward_list, i)
+      return r.value
+    end
+  end
+  return 0
+end
+
+"Get best action policy."
+function get_max_action()
+
+end
+
+"Check Constraints, like rewards."
+function check_constraints()
+  last_reward = get_reward()
+  agent_x.sum_reward += last_reward
+  reward_action_dict[last_action]
+end
+
+"Simple Random move policy."
 function move_agent_random()
+  last_action = get_random_action()
   eval(Meta.parse(string("move_agent_", get_random_action(), "()")))
 end
 
-
+"Resets Agent to initial position"
 function reset_agent()
-  agent_x = Agent(Offset(5,10), Offset(0,0),0)
+  global agent_x = Agent(Offset(5,10), Offset(0,0),0)
+  global reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
+
   env_offsets = initialize_gui(reward_list, agent_x)
   update_gui(env_offsets, reward_list, agent_x)
 end
 
-function move_agent()
-  for x = 1:100
+"Moves Agent for given policy"
+function move_agent(policy)
+  for x = 1:10
     sleep(0.5)
+    policy()
+    check_constraints()
+    update_gui(env_offsets, reward_list, agent_x)
+  end
+end
+
+"Moves Agent for given policy"
+function move_agent()
+  for x = 1:38
+    sleep(0.1)
     move_agent_random()
+    check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
   end
 end
