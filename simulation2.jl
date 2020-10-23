@@ -33,7 +33,7 @@ reward_8 = Reward(Offset(3,10), Offset(0,0),100)
 
 # create reward list
 reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
-last_rewared = 0
+last_reward = 0
 last_action = "up"
 
 # create agent
@@ -112,16 +112,24 @@ function get_max_action()
 
 end
 
+"Move with max action"
+function move_max_action()
+
+end
+
+
 "Check Constraints, like rewards."
 function check_constraints()
-  last_reward = get_reward()
-  agent_x.sum_reward += last_reward
-  reward_action_dict[last_action]
+  global last_reward = get_reward()
+  global agent_x.sum_reward += last_reward
+  if last_reward > 0
+    global reward_action_dict[last_action] = reward_action_dict[last_action] + 1
+  end
 end
 
 "Simple Random move policy."
 function move_agent_random()
-  last_action = get_random_action()
+  global last_action = get_random_action()
   eval(Meta.parse(string("move_agent_", get_random_action(), "()")))
 end
 
@@ -129,6 +137,7 @@ end
 function reset_agent()
   global agent_x = Agent(Offset(5,10), Offset(0,0),0)
   global reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
+  global reward_action_dict = Dict("left" => 0, "right" => 0, "up" => 0, "down" => 0)
 
   env_offsets = initialize_gui(reward_list, agent_x)
   update_gui(env_offsets, reward_list, agent_x)
