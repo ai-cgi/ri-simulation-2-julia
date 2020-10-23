@@ -109,14 +109,16 @@ end
 
 "Get best action policy."
 function get_max_action()
-
+  max_value = maximum(values(reward_action_dict))
+  action_keys = collect(keys(filter(p -> p.second == 2, reward_action_dict)))
+  action_keys[rand(1:length(action_keys))]
 end
 
 "Move with max action"
 function move_max_action()
-
+  global last_action = get_max_action()
+  eval(Meta.parse(string("move_agent_", last_action, "()")))
 end
-
 
 "Check Constraints, like rewards."
 function check_constraints()
