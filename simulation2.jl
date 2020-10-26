@@ -141,6 +141,15 @@ function move_agent_random()
   eval(Meta.parse(string("move_agent_", get_random_action(), "()")))
 end
 
+"Simple implementation of the ϵ-greedy function"
+function ϵ_greedy(ϵ)
+  if rand() <= ϵ
+    move_agent_random()
+  else
+    move_max_action()
+  end
+end
+
 "Resets Agent to initial position"
 function reset_agent()
   global agent_x = Agent(Offset(5,10), Offset(0,0),0)
@@ -152,10 +161,20 @@ function reset_agent()
 end
 
 "Moves Agent for given policy"
-function move_agent(policy)
-  for x = 1:10
-    sleep(0.5)
+function move_agent(policy, iterations)
+  for x = 1:iterations
+    sleep(0.05)
     policy()
+    check_constraints()
+    update_gui(env_offsets, reward_list, agent_x)
+  end
+end
+
+"Moves Agent for given policy"
+function move_agent_epsilon(policy, ϵ, iterations)
+  for x = 1:iterations
+    sleep(0.05)
+    policy(ϵ)
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
   end
