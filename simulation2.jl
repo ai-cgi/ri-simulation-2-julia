@@ -109,8 +109,14 @@ end
 
 "Get best action policy."
 function get_max_action()
-  max_value = maximum(values(reward_action_dict))
-  action_keys = collect(keys(filter(p -> p.second == 2, reward_action_dict)))
+  pos_actions = get_possible_actions()
+  possible_reward_action_dict = Dict()
+  for pos_act in pos_actions
+         possible_reward_action_dict[pos_act] = reward_action_dict[pos_act]
+  end
+
+  max_value = maximum(values(possible_reward_action_dict))
+  action_keys = collect(keys(filter(p -> p.second == max_value, possible_reward_action_dict)))
   action_keys[rand(1:length(action_keys))]
 end
 
