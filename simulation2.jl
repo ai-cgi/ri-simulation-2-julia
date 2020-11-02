@@ -19,7 +19,7 @@ possible_actions = []
 final_state = Offset(3,10)
 
 "Collect rewards based on action"
-reward_action_dict = Dict("left" => 0, "right" => 0, "up" => 0, "down" => 0)
+reward_action_dict = Dict("left" => ActionValue(0,0), "right" => ActionValue(0,0), "up" => ActionValue(0,0), "down" => ActionValue(0,0))
 
 # defining all rewards
 reward_1 = Reward(Offset(5,5), Offset(0,0),3)
@@ -35,6 +35,7 @@ reward_8 = Reward(Offset(3,10), Offset(0,0),100)
 reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
 last_reward = 0
 last_action = "up"
+number_of_steps = 0
 
 # create agent
 agent_x = Agent(Offset(5,10), Offset(0,0),0)
@@ -115,8 +116,8 @@ function get_max_action()
          possible_reward_action_dict[pos_act] = reward_action_dict[pos_act]
   end
 
-  max_value = maximum(values(possible_reward_action_dict))
-  action_keys = collect(keys(filter(p -> p.second == max_value, possible_reward_action_dict)))
+  max_value = maximum(map(v -> v.average_reward, values(possible_reward_action_dict)))
+  action_keys = collect(keys(filter(p -> p.second.average_reward == max_value, possible_reward_action_dict)))
   action_keys[rand(1:length(action_keys))]
 end
 
@@ -131,7 +132,11 @@ function check_constraints()
   global last_reward = get_reward()
   global agent_x.sum_reward += last_reward
   if last_reward > 0
-    global reward_action_dict[last_action] = reward_action_dict[last_action] + 1
+    # we have to use the correct formular
+    global reward_action_dict[last_action].number_consumed = reward_action_dict[last_action].number_consumed + 1
+    global reward_action_dict[last_action].average_reward =
+      reward_action_dict[last_action].average_reward +
+         ((1 / reward_action_dict[last_action].number_consumed) * (last_reward - reward_action_dict[last_action].average_reward))
   end
 end
 
@@ -143,18 +148,19 @@ end
 
 "Simple implementation of the ϵ-greedy function"
 function ϵ_greedy(ϵ)
-  if rand() <= ϵ
-    move_agent_random()
-  else
-    move_max_action()
-  end
+    if rand() <= ϵ
+      move_agent_random()
+    else
+      move_max_action()
+    end
 end
 
 "Resets Agent to initial position"
 function reset_agent()
   global agent_x = Agent(Offset(5,10), Offset(0,0),0)
   global reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
-  global reward_action_dict = Dict("left" => 0, "right" => 0, "up" => 0, "down" => 0)
+  # global reward_action_dict = Dict("left" => 0, "right" => 0, "up" => 0, "down" => 0)
+  global reward_action_dict = Dict("left" => ActionValue(0,0), "right" => ActionValue(0,0), "up" => ActionValue(0,0), "down" => ActionValue(0,0))
 
   env_offsets = initialize_gui(reward_list, agent_x)
   update_gui(env_offsets, reward_list, agent_x)
@@ -172,11 +178,13 @@ end
 
 "Moves Agent for given policy"
 function move_agent_epsilon(policy, ϵ, iterations)
-  for x = 1:iterations
+  x = 0
+  while (x < iterations) && not(is_final_state())
     sleep(0.05)
     policy(ϵ)
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
+    x = x + 1
   end
 end
 

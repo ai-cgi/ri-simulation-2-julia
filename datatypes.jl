@@ -29,3 +29,9 @@ mutable struct Agent
   gui_offset::Offset
   sum_reward::Int
 end
+
+"Data Structure for Action Value"
+mutable struct ActionValue
+  number_consumed::Int
+  average_reward::Int
+end
