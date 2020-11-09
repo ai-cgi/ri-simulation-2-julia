@@ -16,6 +16,17 @@ env_matrix = [[1 1 1 1 1 1 1 1 1 1]
 
 possible_actions = []
 
+Q = Array{Dict}(undef, 10, 10)
+
+"initialize Q array"
+function initialize_q_table()
+  for i = 1:10
+      for j = 1:10
+        Q[i,j] = Dict("up" => 0, "down" => 0, "left" => 0, "right" => 0)         end
+      end
+    end
+end
+
 final_state = Offset(3,10)
 
 "Collect rewards based on action"
@@ -174,6 +185,13 @@ function move_agent(policy, iterations)
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
   end
+end
+
+"Implementation of the monte carlo function"
+function monte_carlo_simulation()
+
+
+
 end
 
 "Moves Agent for given policy"
