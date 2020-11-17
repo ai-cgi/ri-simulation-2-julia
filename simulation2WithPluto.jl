@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.4
+# v0.12.10
 
 using Markdown
 using InteractiveUtils
@@ -16,8 +16,9 @@ end
 # ╔═╡ 66f2f870-108b-11eb-0ce6-1f6e07b93a46
 # Setting up the libraries
 begin
-	if !endswith(pwd(), "computationalthinking")
-	    cd("computationalthinking")
+	dir = "C:/projects/plutoJL/computationalthinking/"
+	if !endswith(pwd(), dir)
+	    cd(dir)
 	end
     import Pkg
 	# Activation means, that packages we installed are valid locally,
@@ -50,7 +51,10 @@ This is a Pluto notebook. So, to get it running, please
 3. I usually put my Pluto notebooks in a subdirectory of the Pluto directory.
 4. When you start Pluto (see below), you then can select it in the "Open from file" field.
 5. The code block marked with "Setting up the libraries" needs some attention:
-   You should replace "computationalthinking" with the name of your subdirectory (twice).
+   You should replace "computationalthinking" with the name of your subdirectory.
+6. Start Julia, then start Pluto with: 
+
+    `using Pluto; Pluto.run()`
 
 """
 
@@ -58,10 +62,20 @@ This is a Pluto notebook. So, to get it running, please
 md"# Let's make a Labyrinth"
 
 # ╔═╡ e479b78e-10b1-11eb-0d37-fbdd2869eef7
-"Function so short, we could have omitted it. Creates a random nxm array of 0 and 1."
+"""
+Function so short, we could have omitted it. Creates a random nxm array of 0 and 1.
+The array given as first argument to the rand(...) in the code will decide the
+probability.
+e.g.
+[0.0, 1.0] gives 50% each
+[0.0, 1.0, 1.0] gives 1/3 walls
+"""
 function makeRandomLabyrinth(n, m)
-	arr = rand([0.0, 1.0], n, m)
+	arr = rand([0.0, 1.0, 1.0], n, m)
 end
+
+# ╔═╡ 5d1e20e0-2837-11eb-1fad-d70c35b9f138
+md"The flood function 'pours' into start, and fills every white space that is reachable"
 
 # ╔═╡ e63a8f80-10b3-11eb-2838-b1948ba267b8
 begin
@@ -85,6 +99,9 @@ begin
 	end
 end
 
+# ╔═╡ 9f8d9320-2837-11eb-06a8-c1a84f786de8
+md"A labyrinth has a path iff when pouring into start, goal will be coloured too"
+
 # ╔═╡ 74d89c8e-10b5-11eb-08dc-89bcdfc5030c
 function makeRandomLabyrinthWithPath(n, m, p1, p2)
 	floodVal = 0.9
@@ -106,7 +123,7 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 end
 
 # ╔═╡ 041d3050-115b-11eb-1792-13f40e80ec8d
-md" Now we have a labyrinth with a possible path from start to goal."
+md" Now we have a labyrinth with a possible path from start (green) to goal (yellow)."
 
 # ╔═╡ 7ead0960-108b-11eb-16fd-fdb97b1d32f2
 environment0 = [[1 1 1 1 1 1 1 1 1 1]
@@ -150,12 +167,14 @@ struct Pos
 end
 
 # ╔═╡ 83602dc0-1126-11eb-3632-e7de171beefd
-begin
-	n = 10
-	m = 17
-	start = Pos(1,1)
-	goal  = Pos(n,m)
-	environment = makeRandomLabyrinthWithPath(n, m, start, goal)
+# The with_terminal() makes the output visible. Otherwise, Pluto will only show the
+# result of the computation.
+with_terminal() do
+	n = 30 # danger of loop. with 50% walls 15x20 needs already ~ 1..5k tries to find maze with path
+	m = 40
+	global start = Pos(1,1)
+	global goal  = Pos(n,m)
+	global environment = makeRandomLabyrinthWithPath(n, m, start, goal)
 	:ok
 end
 
@@ -171,12 +190,7 @@ end
 vis(enclose(environment, 0.7))
 
 # ╔═╡ 65b5aca0-122f-11eb-2589-0f42d5b6200b
-#with_terminal() do
-begin
-	plop = rand(3,3)
-	pppp = one(plop)
-	pppp * plop - plop
-end
+
 
 # ╔═╡ 9eb7d610-109d-11eb-3b7e-09ec7b457e39
 begin
@@ -229,9 +243,12 @@ end
 # ╔═╡ eb2c2fa0-10a2-11eb-0858-8f74d1315800
 showPos(start)
 
+# ╔═╡ bd7d4a90-28a2-11eb-29a8-6977d054b789
+md"## A completely random walk."
+
 # ╔═╡ 27a00cd0-10a9-11eb-2f12-abb2475ba54d
-function run()
-	limit = 5000
+function randomWalk()
+	limit = 50000
 	r = [start]
 	count = 0
 	while count < limit && r[end] != goal
@@ -248,7 +265,7 @@ function run()
 end
 
 # ╔═╡ 7b189c60-10a9-11eb-3495-e3b92b38c968
-r = run();
+r = randomWalk();
 
 # ╔═╡ a141de80-10ac-11eb-3922-e3f4f0a071f6
 md"Run $(r[end]==goal ? \"successful\" : \"gave up\") after $(length(r)) steps."
@@ -262,11 +279,19 @@ md"## Hint: Select the slider, and then use cursor left / right keys."
 # ╔═╡ 8289cb60-10ac-11eb-1a06-0de38c71a4fc
 showPos(r[step])
 
+# ╔═╡ f2021d90-28a2-11eb-1a83-e5d7932f9761
+md"""
+## Monte Carlo
+Monte Carlo seems to mean: Roll the dice often enoug, and something will come up that is acceptable. For efficiency, add secret souce.
+
+This is MC *without* secret souce. We run randomly n times and keep the fastest, i.e. shortest run.
+"""
+
 # ╔═╡ 55233a80-10b1-11eb-2b60-2dd005c9f975
 function mc(n)
-	r = run()
+	r = randomWalk()
 	for i in 2:n
-		r2 = run()
+		r2 = randomWalk()
 		if length(r2) < length(r)
 			r = r2
 		end
@@ -276,7 +301,9 @@ end
 
 # ╔═╡ 7bb391b0-114a-11eb-01b4-6b160f733e0b
 with_terminal() do
-    global ro = @time mc(100_000)
+	n = 1
+    global ro = @time mc(n)
+	println("Found a run of length $(length(ro)) after $n runs.")
 end
 
 # ╔═╡ 0da83940-114b-11eb-3fe7-154d0376336f
@@ -286,19 +313,243 @@ end
 showPos(ro[stepo])
 
 # ╔═╡ ec8d3a6e-114b-11eb-1959-9136912de031
-md"Best run in $(length(ro)) steps."
+md"Best of the (random) runs found the exit in $(length(ro)) steps."
+
+# ╔═╡ 332902e0-28a6-11eb-2b7c-b38ecfeff63b
+md"""
+## Towards Reinforcement Learning
+
+We start with a single run, to find the exit. For that we can use the randomWalk,
+or some heuristics.
+
+(Right-hand-on-the-wall and its left hand equivalent should work fine here, as the exit is at the limits of the labyrinth.)
+"""
+
+# ╔═╡ cbcd3e80-28a6-11eb-2c9b-7b6e83510cd0
+function rightHandOnTheWall()
+	limit = 50000
+	r = [start]
+	actions = allowedActions(start)
+	#here I use the information, that I start at 1,1. Should be done better
+	lastAction = actions[1]
+	if length(actions) == 2
+		lastAction = down
+	end
+	push!(r, lastAction(start))
+	count = 1
+	while count < limit && r[end] != goal
+        count += 1
+		currentPosition = r[end]
+		actions = Set(allowedActions(currentPosition))
+		if length(actions) < 1
+			println("strange things happen at the $currentPosition point")
+		end
+		
+		orderedActions = [right, up, left, down]
+		idx = indexin([lastAction], orderedActions)[1]-1
+		if idx < 1
+			idx = 4
+		end
+		orderedActionsDirected = vcat(orderedActions[idx:end], 
+			                          orderedActions[1:idx-1])
+
+		suggestedActions = filter(a -> a ∈ actions, orderedActionsDirected)
+		action = suggestedActions[1]
+		#println("From $((currentPosition.x,currentPosition.y)), after $lastAction we go $action, suggested: $(map(Symbol,suggestedActions))")
+			
+		# action = rand(actions)
+		
+		push!(r, action(currentPosition))
+		lastAction = action
+	end
+	r
+end
+
+# ╔═╡ 5ee3d0d0-28a7-11eb-0c91-f1ef4e8c8d25
+@bind startHeuristics Select(["randomWalk" => "random", "rightHandOnTheWall" => "right hand on the wall"], default="randomWalk")
+
+# ╔═╡ 6110c2f0-28a7-11eb-25f5-15f394f9ac44
+md"$startHeuristics is used as start heuristics"
+
+# ╔═╡ 009256b0-2766-11eb-3208-21824dedb58f
+with_terminal() do
+	a = Dict()
+	println("First walk uses the heuristics $startHeuristics")		
+	firstWalk = eval(Symbol(startHeuristics))() #randomWalk()
+	println("Found a path of length $(length(firstWalk))")	
+	currentValue = 0
+	# start at end == goal
+	for i in length(firstWalk):-1:1
+		# if not in a, then this it the nearest to goal
+		if !haskey(a, firstWalk[i])
+			a[firstWalk[i]] = currentValue
+			currentValue -= 1
+			println(currentValue)
+		else # state already in a, so we found a shortcut
+			currentValue = a[firstWalk[i]] - 1
+			println("shortcut to $currentValue")
+		end
+	end
+	global a0 = a
+end
+
+# ╔═╡ 06143c00-276d-11eb-066b-bdc66ae718bc
+function showA(a)
+    v = vis(enclose(environment, 0.7))
+	v[1, 1] = RGB(1.0,0.0,0.0) # assumes start at 1 1
+	scale = minimum(values(a))
+	for p in keys(a)
+		v[p.x+1, p.y+1] = RGB(0.0,a[p]/scale,0.8)
+	end
+	v
+end
+
+# ╔═╡ a0057490-276e-11eb-24df-dd4df346d183
+showA(a0)
+
+# ╔═╡ 832cced0-2779-11eb-317a-51f6a7dc2a98
+function greedy(a, p)
+	actions = allowedActions(p)
+	# I use get, not a[ax(p)], so I can give a low default value to unknown places
+	actionValues = map(ax -> get(a,ax(p),-100000), actions)
+	v, i = findmax(actionValues)
+	actions[i]
+end
+
+# ╔═╡ 58b5b230-277d-11eb-0fa7-0d098f4ab70d
+function runWithPolicy(policy, a)
+	r = [start]
+	while r[end] != goal
+		currentPosition = r[end]
+		action = policy(a, currentPosition)
+		push!(r, action(currentPosition))
+	end
+	r
+end
+
+# ╔═╡ 1b9077a0-277d-11eb-0da4-8d6cdd1d9a4a
+with_terminal() do
+	# I had a case where the firstWalk didn't find the exit in 5000 steps
+	# sending runWithPolicy(greedy, a0) into an infinite loop.
+	if get(a0, goal, -10000) != -10000
+		@time global firstPolicedWalk = runWithPolicy(greedy, a0)
+	else
+		println("Can't run yet")
+	end
+end
+
+# ╔═╡ 33cbad30-2782-11eb-14c5-35599512657d
+md"This took $(length(firstPolicedWalk)) steps."
+
+# ╔═╡ b12a6400-277e-11eb-155d-8b9b9cf56177
+@bind step1 Slider(1:length(firstPolicedWalk), default = 1, show_value=true)
+
+# ╔═╡ c19fa5c0-277e-11eb-1640-559e9143177a
+showPos(firstPolicedWalk[step1])
+
+# ╔═╡ 107337d0-28ff-11eb-2f23-933d94f9d8df
+ϵ = 0.3
+
+# ╔═╡ 17160fc0-2901-11eb-0e1c-9be562177705
+episodeLength = 20
+
+# ╔═╡ 2bc0819e-28ff-11eb-04e1-75d13c28ab89
+function mcRC(n)
+	a = copy(a0)
+	for i in 1:n
+		pos = rand(keys(a)) #start from a known position
+		action = rand(allowedActions(pos)) # perform a random action
+		r = [pos, action(pos)]
+		for k in 1:episodeLength
+			currentPosition = r[end]
+			if rand() > ϵ
+				action = greedy(a, currentPosition)
+			else
+				action = rand(allowedActions(currentPosition))
+			end
+			push!(r, action(currentPosition))
+		end
+		#println("i=$i")
+		currentValue = a[r[1]]
+		# start at end == goal
+		for i in 1:length(r)
+			# if not in a, then this it the nearest to goal
+			if !haskey(a, r[i])
+				a[r[i]] = currentValue
+				currentValue -= 1
+				#println(currentValue)
+			else # state already in a, so we found a shortcut
+				currentValue = a[r[i]] - 1
+				#println("shortcut to $currentValue")
+			end
+		end
+
+	end
+	a
+end
+
+# ╔═╡ dda73b90-2902-11eb-0eaf-d9d79fde7518
+ with_terminal() do
+	@time global a1 = mcRC(500_000)
+end
+
+# ╔═╡ ff11fd80-2900-11eb-179e-19b3f2682029
+if get(a0, goal, -10000) != -10000
+	rMC = runWithPolicy(greedy, a1)
+else
+	println("Can't run yet")
+end
+
+# ╔═╡ a147f6d0-2907-11eb-12f7-ffb4409424be
+md"This took $(length(rMC)) steps."
+
+# ╔═╡ b9084950-2907-11eb-3f4d-9bce686f420b
+@bind stepMCRC Slider(1:length(rMC), default = 1, show_value=true)
+
+# ╔═╡ cc18cf60-2907-11eb-3739-f5ec56fcff4f
+showPos(rMC[stepMCRC])
+
+# ╔═╡ 5369ec60-2908-11eb-0a00-bd170c3142e1
+showA(a1)
+
+# ╔═╡ 1df51b90-277d-11eb-3df1-b5f6c4a123fb
+md"# Misc Tests & Experiments"
 
 # ╔═╡ 2b67f280-1223-11eb-1adf-bb43c135e27c
 [Gray(0.5) Gray(0.9) RGB(0.9,0.0,0.0)] 
 
-# ╔═╡ 3b11e970-122d-11eb-2ca5-8364b8e87f47
-a = 24
+# ╔═╡ e4303e90-2451-11eb-264f-6dfad8939bbb
+@bind testBox CheckBox(default=false)
 
-# ╔═╡ 3edecff2-122d-11eb-280a-79af4ba54967
-b = 112 * a
+# ╔═╡ ea11d440-2451-11eb-2b3a-6dc972a6e57f
+begin
+	if(testBox)
+		md"Yes"
+	else
+		md"No"
+	end
+end
 
-# ╔═╡ 5250d6f0-122d-11eb-1fe8-59441130ce59
-c = inc(b)
+# ╔═╡ f26bee92-2452-11eb-1417-91ab179d2c01
+mutable struct Counter
+	n
+end
+
+# ╔═╡ 342e7470-2452-11eb-14ed-9d98d89a2b07
+runCounter = Counter(0)
+
+# ╔═╡ 3b089af0-2452-11eb-3bed-45ab89873ce9
+@bind doRun Button("Run!")
+
+# ╔═╡ 38905280-2453-11eb-0c85-5f7897bd6a79
+doRun
+
+# ╔═╡ 43bed470-2452-11eb-0392-eb8049029f12
+begin
+	doRun
+	runCounter.n += 1
+	md"I run $(runCounter.n) times."
+end
 
 # ╔═╡ Cell order:
 # ╟─873e67a0-114d-11eb-0e58-17a0964b9172
@@ -306,7 +557,9 @@ c = inc(b)
 # ╟─708af13e-114d-11eb-387c-436d11865e42
 # ╠═e479b78e-10b1-11eb-0d37-fbdd2869eef7
 # ╠═2e0d2a90-10b2-11eb-0c7a-eb5318672ebe
+# ╠═5d1e20e0-2837-11eb-1fad-d70c35b9f138
 # ╠═e63a8f80-10b3-11eb-2838-b1948ba267b8
+# ╠═9f8d9320-2837-11eb-06a8-c1a84f786de8
 # ╠═74d89c8e-10b5-11eb-08dc-89bcdfc5030c
 # ╠═83602dc0-1126-11eb-3632-e7de171beefd
 # ╟─041d3050-115b-11eb-1792-13f40e80ec8d
@@ -318,7 +571,7 @@ c = inc(b)
 # ╠═3e51e86e-109c-11eb-3c8a-f9f613e454d7
 # ╠═2d2fe160-109b-11eb-359a-f77ff97f44f8
 # ╠═d5990fa0-109d-11eb-1e3a-31f426f6600d
-# ╠═65b5aca0-122f-11eb-2589-0f42d5b6200b
+# ╟─65b5aca0-122f-11eb-2589-0f42d5b6200b
 # ╠═9eb7d610-109d-11eb-3b7e-09ec7b457e39
 # ╠═245ac230-1230-11eb-0d47-4dff5b33feb0
 # ╠═6c19af50-109b-11eb-0925-a1468e9692a2
@@ -328,18 +581,47 @@ c = inc(b)
 # ╠═34449bb0-10a2-11eb-361d-df29435cc335
 # ╠═b240f540-10a2-11eb-37f6-dbe5571bd876
 # ╠═eb2c2fa0-10a2-11eb-0858-8f74d1315800
+# ╠═bd7d4a90-28a2-11eb-29a8-6977d054b789
 # ╠═27a00cd0-10a9-11eb-2f12-abb2475ba54d
 # ╠═7b189c60-10a9-11eb-3495-e3b92b38c968
 # ╟─a141de80-10ac-11eb-3922-e3f4f0a071f6
 # ╟─7f2b0e90-1131-11eb-1cd0-e178e8d1c29a
-# ╟─61f04e10-10ac-11eb-18b1-ab2d0f9958c4
+# ╠═61f04e10-10ac-11eb-18b1-ab2d0f9958c4
 # ╠═8289cb60-10ac-11eb-1a06-0de38c71a4fc
+# ╟─f2021d90-28a2-11eb-1a83-e5d7932f9761
 # ╠═55233a80-10b1-11eb-2b60-2dd005c9f975
 # ╠═7bb391b0-114a-11eb-01b4-6b160f733e0b
-# ╟─0da83940-114b-11eb-3fe7-154d0376336f
+# ╠═0da83940-114b-11eb-3fe7-154d0376336f
 # ╠═9ea00a40-114b-11eb-2c07-2b490e8f9460
 # ╟─ec8d3a6e-114b-11eb-1959-9136912de031
+# ╟─332902e0-28a6-11eb-2b7c-b38ecfeff63b
+# ╠═cbcd3e80-28a6-11eb-2c9b-7b6e83510cd0
+# ╟─5ee3d0d0-28a7-11eb-0c91-f1ef4e8c8d25
+# ╟─6110c2f0-28a7-11eb-25f5-15f394f9ac44
+# ╠═009256b0-2766-11eb-3208-21824dedb58f
+# ╠═06143c00-276d-11eb-066b-bdc66ae718bc
+# ╠═a0057490-276e-11eb-24df-dd4df346d183
+# ╠═832cced0-2779-11eb-317a-51f6a7dc2a98
+# ╠═58b5b230-277d-11eb-0fa7-0d098f4ab70d
+# ╠═1b9077a0-277d-11eb-0da4-8d6cdd1d9a4a
+# ╠═33cbad30-2782-11eb-14c5-35599512657d
+# ╠═b12a6400-277e-11eb-155d-8b9b9cf56177
+# ╠═c19fa5c0-277e-11eb-1640-559e9143177a
+# ╠═107337d0-28ff-11eb-2f23-933d94f9d8df
+# ╠═17160fc0-2901-11eb-0e1c-9be562177705
+# ╠═2bc0819e-28ff-11eb-04e1-75d13c28ab89
+# ╠═dda73b90-2902-11eb-0eaf-d9d79fde7518
+# ╠═ff11fd80-2900-11eb-179e-19b3f2682029
+# ╟─a147f6d0-2907-11eb-12f7-ffb4409424be
+# ╟─b9084950-2907-11eb-3f4d-9bce686f420b
+# ╠═cc18cf60-2907-11eb-3739-f5ec56fcff4f
+# ╠═5369ec60-2908-11eb-0a00-bd170c3142e1
+# ╠═1df51b90-277d-11eb-3df1-b5f6c4a123fb
 # ╠═2b67f280-1223-11eb-1adf-bb43c135e27c
-# ╠═5250d6f0-122d-11eb-1fe8-59441130ce59
-# ╠═3b11e970-122d-11eb-2ca5-8364b8e87f47
-# ╠═3edecff2-122d-11eb-280a-79af4ba54967
+# ╠═e4303e90-2451-11eb-264f-6dfad8939bbb
+# ╠═ea11d440-2451-11eb-2b3a-6dc972a6e57f
+# ╠═f26bee92-2452-11eb-1417-91ab179d2c01
+# ╠═342e7470-2452-11eb-14ed-9d98d89a2b07
+# ╠═3b089af0-2452-11eb-3bed-45ab89873ce9
+# ╠═38905280-2453-11eb-0c85-5f7897bd6a79
+# ╠═43bed470-2452-11eb-0392-eb8049029f12
