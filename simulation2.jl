@@ -81,24 +81,24 @@ function get_possible_actions()
 end
 
 # implement agent movement
-function move_agent_up()
-  agent_x.sim_offset.y = agent_x.sim_offset.y - 1
-  agent_x.sim_offset
+function move_agent_up(agent)
+  agent.sim_offset.y = agent_x.sim_offset.y - 1
+  agent
 end
 
-function move_agent_down()
-  agent_x.sim_offset.y = agent_x.sim_offset.y + 1
-  agent_x.sim_offset
+function move_agent_down(agent)
+  agent.sim_offset.y = agent_x.sim_offset.y + 1
+  agent
 end
 
-function move_agent_right()
-  agent_x.sim_offset.x = agent_x.sim_offset.x + 1
-  agent_x.sim_offset
+function move_agent_right(agent)
+  agent.sim_offset.x = agent_x.sim_offset.x + 1
+  agent
 end
 
-function move_agent_left()
-  agent_x.sim_offset.x = agent_x.sim_offset.x - 1
-  agent_x.sim_offset
+function move_agent_left(agent)
+  agent.sim_offset.x = agent_x.sim_offset.x - 1
+  agent
 end
 
 function get_random_action()
@@ -216,5 +216,17 @@ function move_agent()
     move_agent_random()
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
+  end
+end
+
+"building a monte carlo search tree"
+function build_mc_tree(tree, agent)
+  tree_key = get_state_for_agent(agent)
+  if !haskey(tree, tree_key)
+    pos_actions = get_possible_actions()
+    sub_tree = Dict()
+    for act in pos_actions
+      sub_tree[act => eval(Meta.parse(string("move_agent_", last_action, "(",agent,")")))]
+    end
   end
 end
