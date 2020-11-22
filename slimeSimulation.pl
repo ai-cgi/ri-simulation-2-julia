@@ -281,12 +281,12 @@ end
 function findPath(paths, pos)
 	path = [] 
 	for p in paths
-		if (length(p) > 0 )# && p[length(p)] == pos)
+		if (length(p) > 0  && p[length(p)] == pos)
 			path = p
 		end
 	end
 
-	push!(path, pos)
+	path
 end
 
 # ╔═╡ 070353b2-2c22-11eb-223e-9f39e48bede6
@@ -299,7 +299,7 @@ function expand()
         count += 1
 		currentPositions = copy(r[end].heads)
 		visited = copy(r[end].visited)
-		paths = deepcopy(r[end].paths)
+		paths = copy(r[end].paths)
 		
 		nextPathHeads = unique(vcat(
 			map(p -> 
@@ -325,7 +325,7 @@ function expand()
 			if !(pathHead.head ∈ visited)
 				push!(newHeads, pathHead.head)
 				push!(visited, pathHead.head)
-				
+					
 			end
 			push!(newPaths, pathHead.path)
 		end
