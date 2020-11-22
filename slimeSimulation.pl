@@ -122,21 +122,6 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 	r
 end
 
-# ╔═╡ 041d3050-115b-11eb-1792-13f40e80ec8d
-md" Now we have a labyrinth with a possible path from start (green) to goal (yellow)."
-
-# ╔═╡ 7ead0960-108b-11eb-16fd-fdb97b1d32f2
-environment0 = [[1 1 1 1 1 1 1 1 1 1]
-              [0 1 0 1 0 1 0 1 0 1]
-              [1 1 1 1 1 1 1 1 1 1]
-              [1 0 1 0 0 0 0 0 1 0]
-              [1 1 1 0 1 1 1 0 1 0]
-              [1 0 1 0 1 0 1 0 1 1]
-              [1 1 1 0 1 0 1 0 0 1]
-              [0 0 1 0 1 0 1 0 1 1]
-              [0 0 1 0 1 0 1 1 1 1]
-              [0 0 1 0 1 0 0 0 0 0]];
-
 # ╔═╡ 6308cb50-109e-11eb-20d8-3999269f6b41
 md"The first index counts from top down, the second left to right. Starts with one."
 
@@ -144,9 +129,6 @@ md"The first index counts from top down, the second left to right. Starts with o
 vis(mx) = let normalizer = maximum(mx)
 	map(n -> RGB(n/normalizer, n/normalizer, n/normalizer), mx)
 end
-
-# ╔═╡ 2e0d2a90-10b2-11eb-0c7a-eb5318672ebe
-vis(flood(makeRandomLabyrinth(70, 70), 1, 1, 1.0, 0.5))#, 0.7))
 
 # ╔═╡ 3e51e86e-109c-11eb-3c8a-f9f613e454d7
 # adds a border
@@ -156,9 +138,6 @@ function enclose(mx, what)
 	updwn = fill(what, 1, m)
 	hcat(sides, vcat(updwn, mx, updwn), sides)
 end
-
-# ╔═╡ 9a05b1d0-1220-11eb-36c3-073f6da8f29d
-enclose(vis(environment0), Gray(0.7))
 
 # ╔═╡ d5990fa0-109d-11eb-1e3a-31f426f6600d
 struct Pos
@@ -178,20 +157,6 @@ with_terminal() do
 	:ok
 end
 
-# ╔═╡ 93f69d70-10b5-11eb-214d-951a0c4cf443
-let vlab = vis(enclose(flood(copy(environment), 1,1, 1.0, 0.9), 0.7))
-	# +1 needed, because we edit the visualization not the labyrinth, and that has an added border
-	vlab[start.x+1, start.y+1] = RGB(0.0, 1.0, 0.0)
-	vlab[goal.x+1, goal.y+1] = RGB(1.0, 1.0, 0.0)
-	vlab
-end
-
-# ╔═╡ 2d2fe160-109b-11eb-359a-f77ff97f44f8
-vis(enclose(environment, 0.7))
-
-# ╔═╡ 65b5aca0-122f-11eb-2589-0f42d5b6200b
-
-
 # ╔═╡ 9eb7d610-109d-11eb-3b7e-09ec7b457e39
 begin
 	inc(x)   = x + one(x)
@@ -201,9 +166,6 @@ begin
 	up(p)    = Pos(dec(p.x), p.y)
 	down(p)  = Pos(inc(p.x), p.y)
 end
-
-# ╔═╡ 245ac230-1230-11eb-0d47-4dff5b33feb0
-left(Pos(3,4))
 
 # ╔═╡ 6c19af50-109b-11eb-0925-a1468e9692a2
 actions = [up, down, left, right]
@@ -225,9 +187,6 @@ allowedPosition(start)
 # ╔═╡ a107e3c0-10a1-11eb-2d51-79e604b51e0b
 allowedActions(currentPos) = filter(f -> allowedPosition(f(currentPos)), actions)
 
-# ╔═╡ 34449bb0-10a2-11eb-361d-df29435cc335
-allowedActions(start)
-
 # ╔═╡ b240f540-10a2-11eb-37f6-dbe5571bd876
 function showPos(p)
     v = vis(enclose(environment, 0.7))
@@ -240,29 +199,8 @@ function showPos(p)
 	v
 end
 
-# ╔═╡ eb2c2fa0-10a2-11eb-0858-8f74d1315800
-showPos(start)
-
 # ╔═╡ bd7d4a90-28a2-11eb-29a8-6977d054b789
-md"## A completely random walk."
-
-# ╔═╡ 27a00cd0-10a9-11eb-2f12-abb2475ba54d
-function randomWalk()
-	limit = 50000
-	r = [start]
-	count = 0
-	while count < limit && r[end] != goal
-        count += 1
-		currentPosition = r[end]
-		actions = allowedActions(currentPosition)
-		if length(actions) < 1
-			println("strange things happen at the $currentPosition point")
-		end
-		action = rand(actions)
-		push!(r, action(currentPosition))
-	end
-	r
-end
+md"## A slime mold."
 
 # ╔═╡ 42253b24-2c2a-11eb-2be3-03ea0f2f5c73
 struct FuligoState
@@ -415,33 +353,22 @@ end
 # ╠═66f2f870-108b-11eb-0ce6-1f6e07b93a46
 # ╟─708af13e-114d-11eb-387c-436d11865e42
 # ╠═e479b78e-10b1-11eb-0d37-fbdd2869eef7
-# ╠═2e0d2a90-10b2-11eb-0c7a-eb5318672ebe
 # ╠═5d1e20e0-2837-11eb-1fad-d70c35b9f138
 # ╠═e63a8f80-10b3-11eb-2838-b1948ba267b8
 # ╠═9f8d9320-2837-11eb-06a8-c1a84f786de8
 # ╠═74d89c8e-10b5-11eb-08dc-89bcdfc5030c
 # ╠═83602dc0-1126-11eb-3632-e7de171beefd
-# ╟─041d3050-115b-11eb-1792-13f40e80ec8d
-# ╠═93f69d70-10b5-11eb-214d-951a0c4cf443
-# ╠═7ead0960-108b-11eb-16fd-fdb97b1d32f2
 # ╠═6308cb50-109e-11eb-20d8-3999269f6b41
 # ╠═0c84c5ee-109d-11eb-298f-d938ebce3865
-# ╠═9a05b1d0-1220-11eb-36c3-073f6da8f29d
 # ╠═3e51e86e-109c-11eb-3c8a-f9f613e454d7
-# ╠═2d2fe160-109b-11eb-359a-f77ff97f44f8
 # ╠═d5990fa0-109d-11eb-1e3a-31f426f6600d
-# ╟─65b5aca0-122f-11eb-2589-0f42d5b6200b
 # ╠═9eb7d610-109d-11eb-3b7e-09ec7b457e39
-# ╠═245ac230-1230-11eb-0d47-4dff5b33feb0
 # ╠═6c19af50-109b-11eb-0925-a1468e9692a2
 # ╠═1b8f6940-109f-11eb-21b1-2f315e51268b
 # ╠═8d3976d0-109f-11eb-39e5-3164b85a0502
 # ╠═a107e3c0-10a1-11eb-2d51-79e604b51e0b
-# ╠═34449bb0-10a2-11eb-361d-df29435cc335
 # ╠═b240f540-10a2-11eb-37f6-dbe5571bd876
-# ╠═eb2c2fa0-10a2-11eb-0858-8f74d1315800
 # ╠═bd7d4a90-28a2-11eb-29a8-6977d054b789
-# ╠═27a00cd0-10a9-11eb-2f12-abb2475ba54d
 # ╠═42253b24-2c2a-11eb-2be3-03ea0f2f5c73
 # ╠═a23a89a8-2c4b-11eb-2185-d1c8323cecfc
 # ╠═515479b2-2c4c-11eb-0745-53d67fa9ef1a
