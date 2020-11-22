@@ -170,8 +170,8 @@ end
 # The with_terminal() makes the output visible. Otherwise, Pluto will only show the
 # result of the computation.
 with_terminal() do
-	n = 30 # danger of loop. with 50% walls 15x20 needs already ~ 1..5k tries to find maze with path
-	m = 40
+	n = 60 # danger of loop. with 50% walls 15x20 needs already ~ 1..5k tries to find maze with path
+	m = 80
 	global start = Pos(1,1)
 	global goal  = Pos(n,m)
 	global environment = makeRandomLabyrinthWithPath(n, m, start, goal)
@@ -268,23 +268,47 @@ end
 struct FuligoState
 	visited
 	heads
+	paths
+end
+
+# ╔═╡ a23a89a8-2c4b-11eb-2185-d1c8323cecfc
+struct PathHead
+	path
+	head
+end
+
+# ╔═╡ 515479b2-2c4c-11eb-0745-53d67fa9ef1a
+function findPath(paths, pos)
+	path = [] 
+	for p in paths
+		if (length(p) > 0 )# && p[length(p)] == pos)
+			path = p
+		end
+	end
+
+	push!(path, pos)
 end
 
 # ╔═╡ 070353b2-2c22-11eb-223e-9f39e48bede6
 
 function expand()
-	limit = 500
-	r = [FuligoState([start], [start])]
+	limit = 1000
+	r = [FuligoState([start], [start], [[start]])]
 	count = 0
 	while count < limit && !(goal ∈ r[end].heads)
         count += 1
 		currentPositions = copy(r[end].heads)
 		visited = copy(r[end].visited)
+		paths = deepcopy(r[end].paths)
 		
-		
-		nextHeads = unique(vcat(
+		nextPathHeads = unique(vcat(
 			map(p -> 
-				map(a->a(p),allowedActions(p)),
+				map(a->
+					PathHead(
+							push!(findPath(paths, p), a(p)),
+							a(p)
+							),
+						allowedActions(p)),
 				currentPositions
 			)...
 		))
@@ -292,17 +316,20 @@ function expand()
 		#println(nextHeads)
 		#return nextHeads
 		
-		if length(nextHeads) < 1
+		if length(nextPathHeads) < 1
 			println("strange things happen at the $currentPosition point")
 		end
 		newHeads = []
-		for head in nextHeads  
-			if !(head ∈ visited)
-				push!(newHeads, head)
-				push!(visited, head)
+		newPaths = [[]]
+		for pathHead in nextPathHeads  
+			if !(pathHead.head ∈ visited)
+				push!(newHeads, pathHead.head)
+				push!(visited, pathHead.head)
+				
 			end
+			push!(newPaths, pathHead.path)
 		end
-		push!(r, FuligoState(visited, newHeads))
+		push!(r, FuligoState(visited, newHeads, newPaths))
 	end
 	r
 end
@@ -316,10 +343,18 @@ function showFuligo(f)
 		v[vis.x+1, vis.y+1] = RGB(1.0,1.0,0.6)
 	end
 	
+	paths = f.paths
+	for ps in paths
+		for p in ps
+			v[p.x+1, p.y+1] = RGB(0.8,0.8,0.6)
+		end
+	end
+	
 	heads = f.heads
 	for h in heads
 		v[h.x+1, h.y+1] = RGB(1.0,0.8,0.0)
 	end
+	
 	v[start.x+1, start.y+1] = RGB(1.0,0.0,0.0)
 	v[goal.x+1, goal.y+1] = RGB(0.0,1.0,0.0)
 	v
@@ -335,48 +370,6 @@ end
 
 # ╔═╡ 98f1647e-2c30-11eb-3f17-a92df4c7e9be
 showFuligo(fuligo[fStep])
-
-# ╔═╡ a141de80-10ac-11eb-3922-e3f4f0a071f6
-md"Run $(r[end]==goal ? \"successful\" : \"gave up\") after $(length(r)) steps."
-
-# ╔═╡ 7f2b0e90-1131-11eb-1cd0-e178e8d1c29a
-md"## Hint: Select the slider, and then use cursor left / right keys."
-
-# ╔═╡ 8289cb60-10ac-11eb-1a06-0de38c71a4fc
-showPos(r[step])
-
-# ╔═╡ f2021d90-28a2-11eb-1a83-e5d7932f9761
-md"""
-## Monte Carlo
-Monte Carlo seems to mean: Roll the dice often enoug, and something will come up that is acceptable. For efficiency, add secret souce.
-
-This is MC *without* secret souce. We run randomly n times and keep the fastest, i.e. shortest run.
-"""
-
-# ╔═╡ ec8d3a6e-114b-11eb-1959-9136912de031
-md"Best of the (random) runs found the exit in $(length(ro)) steps."
-
-# ╔═╡ 332902e0-28a6-11eb-2b7c-b38ecfeff63b
-md"""
-## Towards Reinforcement Learning
-
-We start with a single run, to find the exit. For that we can use the randomWalk,
-or some heuristics.
-
-(Right-hand-on-the-wall and its left hand equivalent should work fine here, as the exit is at the limits of the labyrinth.)
-"""
-
-# ╔═╡ 5ee3d0d0-28a7-11eb-0c91-f1ef4e8c8d25
-@bind startHeuristics Select(["randomWalk" => "random", "rightHandOnTheWall" => "right hand on the wall"], default="randomWalk")
-
-# ╔═╡ 6110c2f0-28a7-11eb-25f5-15f394f9ac44
-md"$startHeuristics is used as start heuristics"
-
-# ╔═╡ b9084950-2907-11eb-3f4d-9bce686f420b
-@bind stepMCRC Slider(1:length(rMC), default = 1, show_value=true)
-
-# ╔═╡ a147f6d0-2907-11eb-12f7-ffb4409424be
-md"This took $(length(rMC)) steps."
 
 # ╔═╡ 1df51b90-277d-11eb-3df1-b5f6c4a123fb
 md"# Misc Tests & Experiments"
@@ -450,21 +443,13 @@ end
 # ╠═bd7d4a90-28a2-11eb-29a8-6977d054b789
 # ╠═27a00cd0-10a9-11eb-2f12-abb2475ba54d
 # ╠═42253b24-2c2a-11eb-2be3-03ea0f2f5c73
+# ╠═a23a89a8-2c4b-11eb-2185-d1c8323cecfc
+# ╠═515479b2-2c4c-11eb-0745-53d67fa9ef1a
 # ╠═070353b2-2c22-11eb-223e-9f39e48bede6
 # ╠═6ba2c8d4-2c2f-11eb-1643-41763d6c4706
 # ╠═7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
 # ╠═98f1647e-2c30-11eb-3f17-a92df4c7e9be
 # ╠═bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
-# ╟─a141de80-10ac-11eb-3922-e3f4f0a071f6
-# ╟─7f2b0e90-1131-11eb-1cd0-e178e8d1c29a
-# ╠═8289cb60-10ac-11eb-1a06-0de38c71a4fc
-# ╟─f2021d90-28a2-11eb-1a83-e5d7932f9761
-# ╟─ec8d3a6e-114b-11eb-1959-9136912de031
-# ╟─332902e0-28a6-11eb-2b7c-b38ecfeff63b
-# ╟─5ee3d0d0-28a7-11eb-0c91-f1ef4e8c8d25
-# ╟─6110c2f0-28a7-11eb-25f5-15f394f9ac44
-# ╟─b9084950-2907-11eb-3f4d-9bce686f420b
-# ╟─a147f6d0-2907-11eb-12f7-ffb4409424be
 # ╠═1df51b90-277d-11eb-3df1-b5f6c4a123fb
 # ╠═2b67f280-1223-11eb-1adf-bb43c135e27c
 # ╠═e4303e90-2451-11eb-264f-6dfad8939bbb
