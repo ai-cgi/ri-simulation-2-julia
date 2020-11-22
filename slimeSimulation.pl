@@ -126,7 +126,10 @@ end
 actions = [up, down, left, right]
 
 # ╔═╡ bd7d4a90-28a2-11eb-29a8-6977d054b789
-md"## A slime mold."
+md"""## A slime mold.
+This simulates a simple organism, that is capable to find it's way through mazes.
+Quite aMazeIng!
+"""
 
 # ╔═╡ 42253b24-2c2a-11eb-2be3-03ea0f2f5c73
 struct FuligoState
@@ -135,22 +138,9 @@ struct FuligoState
 	paths
 end
 
-# ╔═╡ a23a89a8-2c4b-11eb-2185-d1c8323cecfc
-struct PathHead
+# ╔═╡ 50a7fb62-2cbd-11eb-16f0-69e950cf94e2
+struct Path
 	path
-	head
-end
-
-# ╔═╡ 515479b2-2c4c-11eb-0745-53d67fa9ef1a
-function findPath(paths, pos)
-	path = [] 
-	for p in paths
-		if (length(p) > 0  && p[length(p)] == pos)
-			path = p
-		end
-	end
-	path
-	#paths[pos]
 end
 
 # ╔═╡ d9b1930c-2ca2-11eb-08ef-316ff1de6859
@@ -238,46 +228,63 @@ function showPos(p)
 	v
 end
 
+# ╔═╡ 7197c570-2cb1-11eb-0050-9d2a21ede82f
+let
+	r = [FuligoState([start], [start], Dict(start => [start]))]
+	currentHeads = copy(r[end].heads)
+	
+	d = Dict(start => [start])
+	d[currentHeads[1]]
+end
+
+# ╔═╡ 40eb9322-2cbc-11eb-36d7-e5e749dec6ae
+let
+	paths = Dict(start => [start])
+	currentHeads = [start]
+	vcat(
+			map(p -> 
+				map(a-> push!(paths[p], a(p)),
+						allowedActions(p)),
+				currentHeads
+			)...
+		)	
+end
+
+
 # ╔═╡ 070353b2-2c22-11eb-223e-9f39e48bede6
 
 function expand()
 	limit = 1000
-	#r = [FuligoState([start], [start], Dict(start => [start]))]
-	r = [FuligoState([start], [start], [[start]])]
+	r = [FuligoState([start], [start], Dict(start => [start]))]
+	
 	count = 0
 	while count < limit && !(goal ∈ r[end].heads)
         count += 1
-		currentPositions = copy(r[end].heads)
+		currentHeads = copy(r[end].heads)
 		visited = copy(r[end].visited)
-		paths = copy(r[end].paths)
+		paths = deepcopy(r[end].paths)
 		
-		nextPathHeads = unique(vcat(
+		posNextPos = vcat(
 			map(p -> 
-				map(a->
-					PathHead(
-							push!(findPath(paths, p), a(p)),
-							a(p)
-							),
-						allowedActions(p)),
-				currentPositions
+				map(a-> (p, a(p)), allowedActions(p)),
+				currentHeads
 			)...
-		))
+		)
 		
 		#println(nextHeads)
 		#return nextHeads
 		
-		if length(nextPathHeads) < 1
-			println("strange things happen at the $currentPosition point")
+		if length(posNextPos) < 1
+			println("strange things happen at the $currentHeads point")
 		end
 		newHeads = []
-		newPaths = [[]]
-		for pathHead in nextPathHeads  
-			if !(pathHead.head ∈ visited)
-				push!(newHeads, pathHead.head)
-				push!(visited, pathHead.head)
-					
+		newPaths = Dict()
+		for (pos, nextPos) in posNextPos  
+			if !(nextPos ∈ visited)
+				push!(newHeads, nextPos)
+				push!(visited, nextPos)
+				newPaths[nextPos] = push!(copy(paths[pos]), nextPos)		
 			end
-			push!(newPaths, pathHead.path)
 		end
 		push!(r, FuligoState(visited, newHeads, newPaths))
 	end
@@ -294,9 +301,9 @@ function showFuligo(f)
 	end
 	
 	paths = f.paths
-	for ps in paths
+	for (_, ps) in paths
 		for p in ps
-			v[p.x+1, p.y+1] = RGB(0.8,0.8,0.6)
+			v[p.x+1, p.y+1] = RGB(0.6,0.7,0.6)
 		end
 	end
 	
@@ -314,6 +321,9 @@ end
 #with_terminal() do 
 	fuligo = expand()
 #end
+
+# ╔═╡ 0b590ab2-2cc0-11eb-03a9-b54366a73e12
+length(fuligo[end].paths[goal])
 
 # ╔═╡ 7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
 @bind fStep Slider(1:length(fuligo), default = 1, show_value=true)
@@ -382,14 +392,16 @@ end
 # ╠═b240f540-10a2-11eb-37f6-dbe5571bd876
 # ╠═bd7d4a90-28a2-11eb-29a8-6977d054b789
 # ╠═42253b24-2c2a-11eb-2be3-03ea0f2f5c73
-# ╠═a23a89a8-2c4b-11eb-2185-d1c8323cecfc
-# ╠═515479b2-2c4c-11eb-0745-53d67fa9ef1a
+# ╠═7197c570-2cb1-11eb-0050-9d2a21ede82f
+# ╠═40eb9322-2cbc-11eb-36d7-e5e749dec6ae
+# ╠═50a7fb62-2cbd-11eb-16f0-69e950cf94e2
 # ╠═070353b2-2c22-11eb-223e-9f39e48bede6
+# ╠═0b590ab2-2cc0-11eb-03a9-b54366a73e12
 # ╠═6ba2c8d4-2c2f-11eb-1643-41763d6c4706
-# ╠═d9b1930c-2ca2-11eb-08ef-316ff1de6859
-# ╠═f62e6a68-2c9e-11eb-0882-49b61e6864e3
-# ╠═9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
-# ╠═7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
+# ╟─d9b1930c-2ca2-11eb-08ef-316ff1de6859
+# ╟─f62e6a68-2c9e-11eb-0882-49b61e6864e3
+# ╟─9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
+# ╟─7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
 # ╠═98f1647e-2c30-11eb-3f17-a92df4c7e9be
 # ╠═bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
 # ╠═1df51b90-277d-11eb-3df1-b5f6c4a123fb
