@@ -61,19 +61,6 @@ This is a Pluto notebook. So, to get it running, please
 # ╔═╡ 708af13e-114d-11eb-387c-436d11865e42
 md"# Let's make a Labyrinth"
 
-# ╔═╡ e479b78e-10b1-11eb-0d37-fbdd2869eef7
-"""
-Function so short, we could have omitted it. Creates a random nxm array of 0 and 1.
-The array given as first argument to the rand(...) in the code will decide the
-probability.
-e.g.
-[0.0, 1.0] gives 50% each
-[0.0, 1.0, 1.0] gives 1/3 walls
-"""
-function makeRandomLabyrinth(n, m)
-	arr = rand([0.0, 1.0, 1.0], n, m)
-end
-
 # ╔═╡ 5d1e20e0-2837-11eb-1fad-d70c35b9f138
 md"The flood function 'pours' into start, and fills every white space that is reachable"
 
@@ -102,26 +89,6 @@ end
 # ╔═╡ 9f8d9320-2837-11eb-06a8-c1a84f786de8
 md"A labyrinth has a path iff when pouring into start, goal will be coloured too"
 
-# ╔═╡ 74d89c8e-10b5-11eb-08dc-89bcdfc5030c
-function makeRandomLabyrinthWithPath(n, m, p1, p2)
-	floodVal = 0.9
-	r = makeRandomLabyrinth(n, m)
-	generateCounter = 1
-	# entrance and exit must be free, of course
-	while r[p1.x, p1.y] != 1.0 || r[p2.x, p2.y] != 1.0
-		r = makeRandomLabyrinth(n, m)
-		generateCounter += 1
-	end
-	rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
-	while rf[p2.x, p2.y] != floodVal
-		r = makeRandomLabyrinth(n, m)
-		generateCounter += 1
-		rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
-	end
-	println("Valid labyrinth after $generateCounter tries.")
-	r
-end
-
 # ╔═╡ 6308cb50-109e-11eb-20d8-3999269f6b41
 md"The first index counts from top down, the second left to right. Starts with one."
 
@@ -145,18 +112,6 @@ struct Pos
 	y
 end
 
-# ╔═╡ 83602dc0-1126-11eb-3632-e7de171beefd
-# The with_terminal() makes the output visible. Otherwise, Pluto will only show the
-# result of the computation.
-with_terminal() do
-	n = 60 # danger of loop. with 50% walls 15x20 needs already ~ 1..5k tries to find maze with path
-	m = 80
-	global start = Pos(1,1)
-	global goal  = Pos(n,m)
-	global environment = makeRandomLabyrinthWithPath(n, m, start, goal)
-	:ok
-end
-
 # ╔═╡ 9eb7d610-109d-11eb-3b7e-09ec7b457e39
 begin
 	inc(x)   = x + one(x)
@@ -169,35 +124,6 @@ end
 
 # ╔═╡ 6c19af50-109b-11eb-0925-a1468e9692a2
 actions = [up, down, left, right]
-
-# ╔═╡ 1b8f6940-109f-11eb-21b1-2f315e51268b
-function allowedPosition(p)
-	let (xMax, yMax) = size(environment)
-		0 < p.x &&
-		0 < p.y &&
-		p.x <= xMax &&
-		p.y <= yMax &&
-		environment[p.x, p.y] == 1
-	end
-end
-
-# ╔═╡ 8d3976d0-109f-11eb-39e5-3164b85a0502
-allowedPosition(start)
-
-# ╔═╡ a107e3c0-10a1-11eb-2d51-79e604b51e0b
-allowedActions(currentPos) = filter(f -> allowedPosition(f(currentPos)), actions)
-
-# ╔═╡ b240f540-10a2-11eb-37f6-dbe5571bd876
-function showPos(p)
-    v = vis(enclose(environment, 0.7))
-	v[p.x+1, p.y+1] = RGB(1.0,0.0,0.0)
-	actions = allowedActions(p)
-	for a in actions
-		nextP = a(p)
-		v[nextP.x+1, nextP.y+1] = RGB(0.0,1.0,1.0)
-	end
-	v
-end
 
 # ╔═╡ bd7d4a90-28a2-11eb-29a8-6977d054b789
 md"## A slime mold."
@@ -223,14 +149,100 @@ function findPath(paths, pos)
 			path = p
 		end
 	end
-
 	path
+	#paths[pos]
+end
+
+# ╔═╡ d9b1930c-2ca2-11eb-08ef-316ff1de6859
+@bind mazeDensity Slider(10:45, default = 30, show_value=true)
+
+# ╔═╡ e479b78e-10b1-11eb-0d37-fbdd2869eef7
+"""
+Function so short, we could have omitted it. Creates a random nxm array of 0 and 1.
+The array given as first argument to the rand(...) in the code will decide the
+probability.
+e.g.
+[0.0, 1.0] gives 50% each
+[0.0, 1.0, 1.0] gives 1/3 walls
+"""
+function makeRandomLabyrinth(n, m)
+	ratio = mazeDensity
+	randomData = push!(vec(fill(1.0, (100-ratio,1))), vec(fill(0.0, (ratio,1)))...)
+	arr = rand(randomData, n, m) #[0.0,1.0,1.0]
+end
+
+# ╔═╡ 74d89c8e-10b5-11eb-08dc-89bcdfc5030c
+function makeRandomLabyrinthWithPath(n, m, p1, p2)
+	floodVal = 0.9
+	r = makeRandomLabyrinth(n, m)
+	generateCounter = 1
+	# entrance and exit must be free, of course
+	while r[p1.x, p1.y] != 1.0 || r[p2.x, p2.y] != 1.0
+		r = makeRandomLabyrinth(n, m)
+		generateCounter += 1
+	end
+	rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
+	while rf[p2.x, p2.y] != floodVal
+		r = makeRandomLabyrinth(n, m)
+		generateCounter += 1
+		rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
+	end
+	println("Valid labyrinth after $generateCounter tries.")
+	r
+end
+
+# ╔═╡ f62e6a68-2c9e-11eb-0882-49b61e6864e3
+@bind mazeHeight Slider(1:200, default = 60, show_value=true)
+
+# ╔═╡ 9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
+@bind mazeWidth Slider(1:300, default = 80, show_value=true)
+
+# ╔═╡ 83602dc0-1126-11eb-3632-e7de171beefd
+# The with_terminal() makes the output visible. Otherwise, Pluto will only show the
+# result of the computation.
+with_terminal() do
+	n = mazeHeight # danger of loop. with 50% walls 15x20 needs already ~ 1..5k tries to find maze with path
+	m = mazeWidth
+	global start = Pos(1,1)
+	global goal  = Pos(n,m)
+	global environment = makeRandomLabyrinthWithPath(n, m, start, goal)
+	:ok
+end
+
+# ╔═╡ 1b8f6940-109f-11eb-21b1-2f315e51268b
+function allowedPosition(p)
+	let (xMax, yMax) = size(environment)
+		0 < p.x &&
+		0 < p.y &&
+		p.x <= xMax &&
+		p.y <= yMax &&
+		environment[p.x, p.y] == 1
+	end
+end
+
+# ╔═╡ a107e3c0-10a1-11eb-2d51-79e604b51e0b
+allowedActions(currentPos) = filter(f -> allowedPosition(f(currentPos)), actions)
+
+# ╔═╡ 8d3976d0-109f-11eb-39e5-3164b85a0502
+allowedPosition(start)
+
+# ╔═╡ b240f540-10a2-11eb-37f6-dbe5571bd876
+function showPos(p)
+    v = vis(enclose(environment, 0.7))
+	v[p.x+1, p.y+1] = RGB(1.0,0.0,0.0)
+	actions = allowedActions(p)
+	for a in actions
+		nextP = a(p)
+		v[nextP.x+1, nextP.y+1] = RGB(0.0,1.0,1.0)
+	end
+	v
 end
 
 # ╔═╡ 070353b2-2c22-11eb-223e-9f39e48bede6
 
 function expand()
 	limit = 1000
+	#r = [FuligoState([start], [start], Dict(start => [start]))]
 	r = [FuligoState([start], [start], [[start]])]
 	count = 0
 	while count < limit && !(goal ∈ r[end].heads)
@@ -374,6 +386,9 @@ end
 # ╠═515479b2-2c4c-11eb-0745-53d67fa9ef1a
 # ╠═070353b2-2c22-11eb-223e-9f39e48bede6
 # ╠═6ba2c8d4-2c2f-11eb-1643-41763d6c4706
+# ╠═d9b1930c-2ca2-11eb-08ef-316ff1de6859
+# ╠═f62e6a68-2c9e-11eb-0882-49b61e6864e3
+# ╠═9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
 # ╠═7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
 # ╠═98f1647e-2c30-11eb-3f17-a92df4c7e9be
 # ╠═bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
