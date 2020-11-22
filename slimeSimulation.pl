@@ -32,8 +32,12 @@ begin
 	if !haskey(Pkg.installed(), "Colors")
 		Pkg.add("Colors")
 	end
+	if !haskey(Pkg.installed(), "Random")
+		Pkg.add("Random")
+	end
 	using PlutoUI # enables the Sliders
 	using Colors  # Gray, RGB
+	using Random
 end
 
 # ╔═╡ 873e67a0-114d-11eb-0e58-17a0964b9172
@@ -138,13 +142,8 @@ struct FuligoState
 	paths
 end
 
-# ╔═╡ 50a7fb62-2cbd-11eb-16f0-69e950cf94e2
-struct Path
-	path
-end
-
 # ╔═╡ d9b1930c-2ca2-11eb-08ef-316ff1de6859
-@bind mazeDensity Slider(10:45, default = 30, show_value=true)
+md"density: $(@bind mazeDensity Slider(10:45, default = 30, show_value=true))"
 
 # ╔═╡ e479b78e-10b1-11eb-0d37-fbdd2869eef7
 """
@@ -172,7 +171,7 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 		generateCounter += 1
 	end
 	rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
-	while rf[p2.x, p2.y] != floodVal
+	while rf[p2.x, p2.y] != floodVal && generateCounter < 10
 		r = makeRandomLabyrinth(n, m)
 		generateCounter += 1
 		rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
@@ -182,10 +181,10 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 end
 
 # ╔═╡ f62e6a68-2c9e-11eb-0882-49b61e6864e3
-@bind mazeHeight Slider(1:200, default = 60, show_value=true)
+md"maze height: $(@bind mazeHeight Slider(1:200, default = 60, show_value=true))"
 
 # ╔═╡ 9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
-@bind mazeWidth Slider(1:300, default = 80, show_value=true)
+md"maze width: $(@bind mazeWidth Slider(1:300, default = 80, show_value=true))"
 
 # ╔═╡ 83602dc0-1126-11eb-3632-e7de171beefd
 # The with_terminal() makes the output visible. Otherwise, Pluto will only show the
@@ -228,41 +227,17 @@ function showPos(p)
 	v
 end
 
-# ╔═╡ 7197c570-2cb1-11eb-0050-9d2a21ede82f
-let
-	r = [FuligoState([start], [start], Dict(start => [start]))]
-	currentHeads = copy(r[end].heads)
-	
-	d = Dict(start => [start])
-	d[currentHeads[1]]
-end
-
-# ╔═╡ 40eb9322-2cbc-11eb-36d7-e5e749dec6ae
-let
-	paths = Dict(start => [start])
-	currentHeads = [start]
-	vcat(
-			map(p -> 
-				map(a-> push!(paths[p], a(p)),
-						allowedActions(p)),
-				currentHeads
-			)...
-		)	
-end
-
-
 # ╔═╡ 070353b2-2c22-11eb-223e-9f39e48bede6
-
 function expand()
 	limit = 1000
-	r = [FuligoState([start], [start], Dict(start => [start]))]
+	states = [FuligoState([start], [start], Dict(start => [start]))]
 	
 	count = 0
-	while count < limit && !(goal ∈ r[end].heads)
+	while count < limit && !(goal ∈ states[end].heads)
         count += 1
-		currentHeads = copy(r[end].heads)
-		visited = copy(r[end].visited)
-		paths = deepcopy(r[end].paths)
+		currentHeads = copy(states[end].heads)
+		visited = copy(states[end].visited)
+		paths = deepcopy(states[end].paths)
 		
 		posNextPos = vcat(
 			map(p -> 
@@ -271,24 +246,18 @@ function expand()
 			)...
 		)
 		
-		#println(nextHeads)
-		#return nextHeads
-		
-		if length(posNextPos) < 1
-			println("strange things happen at the $currentHeads point")
-		end
 		newHeads = []
 		newPaths = Dict()
-		for (pos, nextPos) in posNextPos  
+		for (pos, nextPos) in shuffle!(posNextPos) # shuffling makes it natural
 			if !(nextPos ∈ visited)
 				push!(newHeads, nextPos)
 				push!(visited, nextPos)
 				newPaths[nextPos] = push!(copy(paths[pos]), nextPos)		
 			end
 		end
-		push!(r, FuligoState(visited, newHeads, newPaths))
+		push!(states, FuligoState(visited, newHeads, newPaths))
 	end
-	r
+	states
 end
 
 # ╔═╡ 6ba2c8d4-2c2f-11eb-1643-41763d6c4706
@@ -322,11 +291,11 @@ end
 	fuligo = expand()
 #end
 
-# ╔═╡ 0b590ab2-2cc0-11eb-03a9-b54366a73e12
-length(fuligo[end].paths[goal])
-
 # ╔═╡ 7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
-@bind fStep Slider(1:length(fuligo), default = 1, show_value=true)
+md"step: $(@bind fStep Slider(1:length(fuligo), default = 1, show_value=true))"
+
+# ╔═╡ 0b590ab2-2cc0-11eb-03a9-b54366a73e12
+md"one minimal path is $(length(fuligo[end].paths[goal])) steps long"
 
 # ╔═╡ 98f1647e-2c30-11eb-3f17-a92df4c7e9be
 showFuligo(fuligo[fStep])
@@ -392,16 +361,13 @@ end
 # ╠═b240f540-10a2-11eb-37f6-dbe5571bd876
 # ╠═bd7d4a90-28a2-11eb-29a8-6977d054b789
 # ╠═42253b24-2c2a-11eb-2be3-03ea0f2f5c73
-# ╠═7197c570-2cb1-11eb-0050-9d2a21ede82f
-# ╠═40eb9322-2cbc-11eb-36d7-e5e749dec6ae
-# ╠═50a7fb62-2cbd-11eb-16f0-69e950cf94e2
 # ╠═070353b2-2c22-11eb-223e-9f39e48bede6
-# ╠═0b590ab2-2cc0-11eb-03a9-b54366a73e12
 # ╠═6ba2c8d4-2c2f-11eb-1643-41763d6c4706
 # ╟─d9b1930c-2ca2-11eb-08ef-316ff1de6859
 # ╟─f62e6a68-2c9e-11eb-0882-49b61e6864e3
 # ╟─9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
 # ╟─7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
+# ╟─0b590ab2-2cc0-11eb-03a9-b54366a73e12
 # ╠═98f1647e-2c30-11eb-3f17-a92df4c7e9be
 # ╠═bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
 # ╠═1df51b90-277d-11eb-3df1-b5f6c4a123fb
