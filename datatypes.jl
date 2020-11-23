@@ -4,8 +4,6 @@ mutable struct Offset
   y::Int
 end
 
-mutable struct Actions
-
 function equal_offset(offset1::Offset, offset2::Offset)
     (offset1.x == offset2.x) && (offset1.y == offset2.y)
 end

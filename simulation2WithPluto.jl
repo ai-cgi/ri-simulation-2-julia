@@ -16,6 +16,8 @@ end
 # ╔═╡ 66f2f870-108b-11eb-0ce6-1f6e07b93a46
 # Setting up the libraries
 begin
+	# THIS LINE MUST BE CONFIGURED, it must be an existing dir, to write
+	# some dependency information to (Manifest.toml, Project.toml)
 	dir = "C:/projects/plutoJL/computationalthinking/"
 	if !endswith(pwd(), dir)
 	    cd(dir)
@@ -46,13 +48,13 @@ This is a Pluto notebook. So, to get it running, please
 1. Install Julia. [julialang.org](http://julialang.org)
 2. In Julia, install Pluto, by hitting ] to enter the package mode, and then type
 
-    add Julia <ENTER>
+    add Pluto <ENTER>
 
-3. I usually put my Pluto notebooks in a subdirectory of the Pluto directory.
-4. When you start Pluto (see below), you then can select it in the "Open from file" field.
-5. The code block marked with "Setting up the libraries" needs some attention:
-   You should replace "computationalthinking" with the name of your subdirectory.
-6. Start Julia, then start Pluto with: 
+3. I usually put my Pluto notebooks in a subdirectory of the Pluto directory. When you    start Pluto (see below), you then can select it in the "Open from file" field.
+4. The code block marked with "Setting up the libraries" needs some attention:
+   You should replace the path containing "computationalthinking" with the 
+   path of your subdirectory. (In Windows, use / instead of backslash.)
+5. Start Julia, then start Pluto with: 
 
     `using Pluto; Pluto.run()`
 
@@ -75,7 +77,9 @@ function makeRandomLabyrinth(n, m)
 end
 
 # ╔═╡ 5d1e20e0-2837-11eb-1fad-d70c35b9f138
-md"The flood function 'pours' into start, and fills every white space that is reachable"
+md"""
+The flood function 'pours' into start, and fills every white space that is reachable. This way we can see, whether there is a path from start to goal.
+"""
 
 # ╔═╡ e63a8f80-10b3-11eb-2838-b1948ba267b8
 begin
@@ -122,8 +126,17 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 	r
 end
 
+# ╔═╡ 8f1016ae-2979-11eb-33b7-8bcf1fd823a3
+md"""
+## We are ready to build the labyrinth, 
+### and declare two positions as entrance and exit (goal)
+"""
+
 # ╔═╡ 041d3050-115b-11eb-1792-13f40e80ec8d
 md" Now we have a labyrinth with a possible path from start (green) to goal (yellow)."
+
+# ╔═╡ 46b128e0-2975-11eb-104f-a726af61b463
+md"### For nostalgic reasons, we keep our original maze."
 
 # ╔═╡ 7ead0960-108b-11eb-16fd-fdb97b1d32f2
 environment0 = [[1 1 1 1 1 1 1 1 1 1]
@@ -141,6 +154,7 @@ environment0 = [[1 1 1 1 1 1 1 1 1 1]
 md"The first index counts from top down, the second left to right. Starts with one."
 
 # ╔═╡ 0c84c5ee-109d-11eb-298f-d938ebce3865
+"Vizualist a maze."
 vis(mx) = let normalizer = maximum(mx)
 	map(n -> RGB(n/normalizer, n/normalizer, n/normalizer), mx)
 end
@@ -159,6 +173,11 @@ end
 
 # ╔═╡ 9a05b1d0-1220-11eb-36c3-073f6da8f29d
 enclose(vis(environment0), Gray(0.7))
+
+# ╔═╡ 8894d5e0-2975-11eb-37f6-7bc7537e9152
+md"""## Finding our way
+First, we define a struct for positions, and the possible actions.
+"""
 
 # ╔═╡ d5990fa0-109d-11eb-1e3a-31f426f6600d
 struct Pos
@@ -189,9 +208,6 @@ end
 # ╔═╡ 2d2fe160-109b-11eb-359a-f77ff97f44f8
 vis(enclose(environment, 0.7))
 
-# ╔═╡ 65b5aca0-122f-11eb-2589-0f42d5b6200b
-
-
 # ╔═╡ 9eb7d610-109d-11eb-3b7e-09ec7b457e39
 begin
 	inc(x)   = x + one(x)
@@ -209,6 +225,7 @@ left(Pos(3,4))
 actions = [up, down, left, right]
 
 # ╔═╡ 1b8f6940-109f-11eb-21b1-2f315e51268b
+"Criterion to filter for actions that don't lead into a wall."
 function allowedPosition(p)
 	let (xMax, yMax) = size(environment)
 		0 < p.x &&
@@ -220,6 +237,7 @@ function allowedPosition(p)
 end
 
 # ╔═╡ 8d3976d0-109f-11eb-39e5-3164b85a0502
+# this better be true (by choice of the maze)
 allowedPosition(start)
 
 # ╔═╡ a107e3c0-10a1-11eb-2d51-79e604b51e0b
@@ -268,7 +286,7 @@ end
 r = randomWalk();
 
 # ╔═╡ a141de80-10ac-11eb-3922-e3f4f0a071f6
-md"Run $(r[end]==goal ? \"successful\" : \"gave up\") after $(length(r)) steps."
+md"The run $(r[end]==goal ? \"ended successfully\" : \"didn' find the goal\") after $(length(r)) steps."
 
 # ╔═╡ 7f2b0e90-1131-11eb-1cd0-e178e8d1c29a
 md"## Hint: Select the slider, and then use cursor left / right keys."
@@ -298,6 +316,9 @@ function mc(n)
 	end
 	r
 end
+
+# ╔═╡ 4f680c60-297a-11eb-1471-2d80b59a15fb
+md"You have to change n to do sth interesting. Remember to change it back, otherwise loading this notebook will take a long time."
 
 # ╔═╡ 7bb391b0-114a-11eb-01b4-6b160f733e0b
 with_terminal() do
@@ -488,9 +509,13 @@ function mcRC(n)
 	a
 end
 
+# ╔═╡ b8572580-297a-11eb-36d0-1b752484dfe4
+md"You have to change n to do sth interesting. Remember to change it back, otherwise loading this notebook will take a long time."
+
 # ╔═╡ dda73b90-2902-11eb-0eaf-d9d79fde7518
  with_terminal() do
-	@time global a1 = mcRC(500_000)
+	n = 1_000
+	@time global a1 = mcRC(n)
 end
 
 # ╔═╡ ff11fd80-2900-11eb-179e-19b3f2682029
@@ -557,21 +582,23 @@ end
 # ╟─708af13e-114d-11eb-387c-436d11865e42
 # ╠═e479b78e-10b1-11eb-0d37-fbdd2869eef7
 # ╠═2e0d2a90-10b2-11eb-0c7a-eb5318672ebe
-# ╠═5d1e20e0-2837-11eb-1fad-d70c35b9f138
+# ╟─5d1e20e0-2837-11eb-1fad-d70c35b9f138
 # ╠═e63a8f80-10b3-11eb-2838-b1948ba267b8
-# ╠═9f8d9320-2837-11eb-06a8-c1a84f786de8
+# ╟─9f8d9320-2837-11eb-06a8-c1a84f786de8
 # ╠═74d89c8e-10b5-11eb-08dc-89bcdfc5030c
+# ╟─8f1016ae-2979-11eb-33b7-8bcf1fd823a3
 # ╠═83602dc0-1126-11eb-3632-e7de171beefd
 # ╟─041d3050-115b-11eb-1792-13f40e80ec8d
 # ╠═93f69d70-10b5-11eb-214d-951a0c4cf443
+# ╟─46b128e0-2975-11eb-104f-a726af61b463
 # ╠═7ead0960-108b-11eb-16fd-fdb97b1d32f2
-# ╠═6308cb50-109e-11eb-20d8-3999269f6b41
+# ╟─6308cb50-109e-11eb-20d8-3999269f6b41
 # ╠═0c84c5ee-109d-11eb-298f-d938ebce3865
 # ╠═9a05b1d0-1220-11eb-36c3-073f6da8f29d
 # ╠═3e51e86e-109c-11eb-3c8a-f9f613e454d7
 # ╠═2d2fe160-109b-11eb-359a-f77ff97f44f8
+# ╟─8894d5e0-2975-11eb-37f6-7bc7537e9152
 # ╠═d5990fa0-109d-11eb-1e3a-31f426f6600d
-# ╟─65b5aca0-122f-11eb-2589-0f42d5b6200b
 # ╠═9eb7d610-109d-11eb-3b7e-09ec7b457e39
 # ╠═245ac230-1230-11eb-0d47-4dff5b33feb0
 # ╠═6c19af50-109b-11eb-0925-a1468e9692a2
@@ -590,6 +617,7 @@ end
 # ╠═8289cb60-10ac-11eb-1a06-0de38c71a4fc
 # ╟─f2021d90-28a2-11eb-1a83-e5d7932f9761
 # ╠═55233a80-10b1-11eb-2b60-2dd005c9f975
+# ╟─4f680c60-297a-11eb-1471-2d80b59a15fb
 # ╠═7bb391b0-114a-11eb-01b4-6b160f733e0b
 # ╠═0da83940-114b-11eb-3fe7-154d0376336f
 # ╠═9ea00a40-114b-11eb-2c07-2b490e8f9460
@@ -610,6 +638,7 @@ end
 # ╠═107337d0-28ff-11eb-2f23-933d94f9d8df
 # ╠═17160fc0-2901-11eb-0e1c-9be562177705
 # ╠═2bc0819e-28ff-11eb-04e1-75d13c28ab89
+# ╟─b8572580-297a-11eb-36d0-1b752484dfe4
 # ╠═dda73b90-2902-11eb-0eaf-d9d79fde7518
 # ╠═ff11fd80-2900-11eb-179e-19b3f2682029
 # ╟─a147f6d0-2907-11eb-12f7-ffb4409424be

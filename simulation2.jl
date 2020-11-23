@@ -22,7 +22,7 @@ Q = Array{Dict}(undef, 10, 10)
 function initialize_q_table()
   for i = 1:10
       for j = 1:10
-        Q[i,j] = Dict("up" => 0, "down" => 0, "left" => 0, "right" => 0)         end
+        Q[i,j] = Dict("up" => 0, "down" => 0, "left" => 0, "right" => 0)         
       end
     end
 end
@@ -58,6 +58,10 @@ env_offsets = initialize_gui(reward_list, agent_x)
 # select column
 # environment[:,1]
 
+function get_state_for_agent(agent)
+         string("S_",agent.sim_offset.x,"_",agent.sim_offset.y)
+end
+
 function get_possible_actions()
   possible_actions = []
 
@@ -77,24 +81,24 @@ function get_possible_actions()
 end
 
 # implement agent movement
-function move_agent_up()
-  agent_x.sim_offset.y = agent_x.sim_offset.y - 1
-  agent_x.sim_offset
+function move_agent_up(agent)
+  agent.sim_offset.y = agent_x.sim_offset.y - 1
+  agent
 end
 
-function move_agent_down()
-  agent_x.sim_offset.y = agent_x.sim_offset.y + 1
-  agent_x.sim_offset
+function move_agent_down(agent)
+  agent.sim_offset.y = agent_x.sim_offset.y + 1
+  agent
 end
 
-function move_agent_right()
-  agent_x.sim_offset.x = agent_x.sim_offset.x + 1
-  agent_x.sim_offset
+function move_agent_right(agent)
+  agent.sim_offset.x = agent_x.sim_offset.x + 1
+  agent
 end
 
-function move_agent_left()
-  agent_x.sim_offset.x = agent_x.sim_offset.x - 1
-  agent_x.sim_offset
+function move_agent_left(agent)
+  agent.sim_offset.x = agent_x.sim_offset.x - 1
+  agent
 end
 
 function get_random_action()
@@ -166,6 +170,7 @@ function ϵ_greedy(ϵ)
     end
 end
 
+
 "Resets Agent to initial position"
 function reset_agent()
   global agent_x = Agent(Offset(5,10), Offset(0,0),0)
@@ -187,22 +192,20 @@ function move_agent(policy, iterations)
   end
 end
 
-"Implementation of the monte carlo function"
-function monte_carlo_simulation()
-
-
-
-end
-
 "Moves Agent for given policy"
 function move_agent_epsilon(policy, ϵ, iterations)
   x = 0
-  while (x < iterations) && not(is_final_state())
-    sleep(0.05)
+  while (x < iterations) && !is_final_state()
+    sleep(0.001)
     policy(ϵ)
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
     x = x + 1
+  end
+  if x < iterations
+    println(string("Final state reached after ", x, " iterations."))
+  else   
+    println("Final state could not be reached....")
   end
 end
 
@@ -213,5 +216,17 @@ function move_agent()
     move_agent_random()
     check_constraints()
     update_gui(env_offsets, reward_list, agent_x)
+  end
+end
+
+"building a monte carlo search tree"
+function build_mc_tree(tree, agent)
+  tree_key = get_state_for_agent(agent)
+  if !haskey(tree, tree_key)
+    pos_actions = get_possible_actions()
+    sub_tree = Dict()
+    for act in pos_actions
+      sub_tree[act => eval(Meta.parse(string("move_agent_", last_action, "(",agent,")")))]
+    end
   end
 end
