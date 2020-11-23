@@ -220,13 +220,20 @@ function move_agent()
 end
 
 "building a monte carlo search tree"
-function build_mc_tree(tree, agent)
-  tree_key = get_state_for_agent(agent)
-  if !haskey(tree, tree_key)
-    pos_actions = get_possible_actions()
-    sub_tree = Dict()
-    for act in pos_actions
-      sub_tree[act => eval(Meta.parse(string("move_agent_", last_action, "(",agent,")")))]
+function build_tree(tree, agt)
+  tree_key = get_state_for_agent(agt)
+  println(tree_key)
+  if is_final_state()
+    tree    
+  else 
+    if !haskey(tree, tree_key)
+      pos_actions = get_possible_actions()
+      sub_tree = Dict()
+      for act in pos_actions
+        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", last_action, "(",agt,")"))))
+      end
+      tree[tree_key] = sub_tree
+      
     end
   end
 end
