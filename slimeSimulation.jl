@@ -178,8 +178,10 @@ begin
 		candidates = [up(pos), right(up(pos)), left(up(pos)), down(pos), left(down(pos)), right(down(pos)), left(pos), right(pos)]
 	
 		(xMax, yMax) = size(env)
-		# && !(p ∈ branch.cells
-		filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax  && env[p.x, p.y] == 0), candidates)
+		
+		filter!(p -> 
+			(0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax),
+			candidates)
 	end
 	
 	function validSize(pos, env, branch)
@@ -187,93 +189,71 @@ begin
 		size(aroundCells, 1)	
 	end
 	
-	function validNeighbors(pos, env, branch)
-		candidates = [up(pos), down(pos), left(pos), right(pos)]
+	function isInMaze(p, env)
 		(xMax, yMax) = size(env)
-		filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax && env[p.x, p.y] == 1), candidates)
-		#println(   size(around(candidates[1],env, branch),1))
-		#println(   validSize(candidates[1], env, branch))
-		filter!(p->(size(around(p, env, branch), 1) - (validSize(p, env, branch)) <= 2 ), candidates)
-		#filter(p->( 8 >= (validSize(p, env, branch)) ), candidates)
-		if branch.touchesWall[1]
-			(xMax, yMax) = size(env)
-			filter!(!(r->r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax), candidates)
+		0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax
+	end
+	
+	function isAtWall(r, env)
+		(xMax, yMax) = size(env)
+		r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax
+	end
+	
+	function isBlank(p, env)
+		env[p.x, p.y] == 1
+	end
+	
+	function nonCollisionCourse(lp, env, branch)
+		(label, p) = lp
+		diffSize = size(around(p, env, branch), 1) - (validSize(p, env, branch)) 
+		if(diffSize <= 1)
+			true
+		elseif diffSize <= 2 
+			if label == "up"
+				leftOrRight(down(p), env, branch)
+			elseif label == "down"
+				leftOrRight(up(p), env, branch)
+			elseif label == "left"
+				upOrDown(right(p), env, branch)
+			else # label ==  "right"
+				upOrDown(left(p), env, branch)
+			end
+		else
+			false
 		end
-		candidates
+	end
+	
+	function leftOrRight(pos, env, branch)
+		candidates = [left(pos), right(pos)]
+		field = filter(p -> isInMaze(p, env), candidates)
+		blank = filter(p->  isBlank(p, env), field)
+		size(blank, 1)<=1
+	end
+	
+	function upOrDown(pos, env, branch)
+		candidates = [up(pos), down(pos)]
+		field = filter(p -> isInMaze(p, env), candidates)
+		blank = filter(p->  isBlank(p, env), field)
+		size(blank, 1)<=1
+	end
+	
+	function validNeighbors(pos, env, branch)
+		candidates = [("up", up(pos)), ("down", down(pos)), ("left", left(pos)), ("right", right(pos))]
+		
+		filter!(p -> 
+			(isInMaze(p[2], env) && isBlank(p[2], env)),
+			candidates)
+		
+		filter!(p->
+			nonCollisionCourse(p, env, branch),
+			candidates)
+		
+		if branch.touchesWall[1]
+			filter!(!(r->isAtWall(r[2], env)), candidates)
+		end
+		map(c->c[2], candidates)
 	end
 end
-
-# ╔═╡ 81404b50-2de2-11eb-1ec2-03ef8452a484
-function leftOrRight(pos, env, branch)
-	candidates = [left(pos), right(pos)]
-	(xMax, yMax) = size(env)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	size(blank, 1)>=1
-end
-
-# ╔═╡ a8d1d1ac-2ddd-11eb-3bdf-b3b0810a6f90
-function validUp(pos, env, branch)
-	candidates = [pos, up(pos), left(up(pos)), right(up(pos)), left(pos), right(pos)]
-	(xMax, yMax) = size(env)
-	#filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax && env[p.x, p.y] == 1), candidates)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	(size(blank, 1)==size(field, 1)) && leftOrRight(down(pos), env, branch)
-end
-
-# ╔═╡ 107abaf8-2de0-11eb-3569-0307ade15455
-function validDown(pos, env, branch)
-	candidates = [pos, down(pos), left(down(pos)), right(down(pos)), left(pos), right(pos)]
-	(xMax, yMax) = size(env)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	(size(blank, 1)==size(field, 1)) && leftOrRight(up(pos), env, branch)
-end
-
-# ╔═╡ 00e87274-2de3-11eb-0894-51974bf1539b
-function upOrDown(pos, env, branch)
-	candidates = [up(pos), down(pos)]
-	(xMax, yMax) = size(env)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	size(blank, 1)>=1
-end
-
-# ╔═╡ 2d4fafe8-2ddf-11eb-10ba-0140f68f427f
-function validRight(pos, env, branch)
-	candidates = [pos, right(pos), right(up(pos)), right(down(pos)), up(pos), down(pos)]
-	(xMax, yMax) = size(env)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	(size(blank, 1)==size(field, 1)) && upOrDown(left(pos), env, branch)
-end
-
-# ╔═╡ edff6e04-2ddf-11eb-3620-b3498e82f553
-function validLeft(pos, env, branch)
-	candidates = [pos, left(pos), left(up(pos)), left(down(pos)), up(pos), down(pos)]
-	(xMax, yMax) = size(env)
-	field = filter(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax), candidates)
-	blank = filter(p->  env[p.x, p.y] == 1, field)
-	(size(blank, 1)==size(field, 1)) && upOrDown(right(pos), env, branch)
-end
-
-# ╔═╡ 44c52d94-2ddd-11eb-0881-b9fc6253847c
-function validNeighbors2(pos, env, branch)
-	result = []
-	if validUp(up(pos), env, branch) push!(result, up(pos)) end
-	if validDown(down(pos), env, branch) push!(result, down(pos)) end
-	if validRight(right(pos), env, branch) push!(result, right(pos)) end
-	if validLeft(left(pos), env, branch) push!(result, left(pos)) end
-	if branch.touchWall[1]
-		(xMax, yMax) = size(env)
-		filter!(r->r.x==0 || r.y==0 || r.x==xMax || r.y==yMax, result)
-	end
-	result
-end
-
-# ╔═╡ d5f06ab2-2d6e-11eb-2966-21146aba3ebf
-#around(Pos(1,1))
 
 # ╔═╡ 43e3f470-2d59-11eb-1e79-2ff78cadc866
 function grow(branch, env)
@@ -282,16 +262,16 @@ function grow(branch, env)
 	
 	if size(branch.heads,1)>0
 		activeHead = rand(branch.heads)
-		println(activeHead)
+		#println(activeHead)
 		vn = validNeighbors(activeHead, env, branch)
-		println(vn)
+		#println(vn)
 		if(size(vn,1)>0)
 			nextPos = rand(vn) 
 			push!(branch.cells, nextPos)
 			push!(branch.heads, nextPos)
 			env[nextPos.x, nextPos.y] = 0.0
 			filter!(h->h != activeHead, branch.heads)
-			println(branch)
+			#println(branch)
 			r = nextPos
 			(xMax, yMax) = size(env)
 			if r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax
@@ -379,22 +359,24 @@ end
 
 # ╔═╡ 74d89c8e-10b5-11eb-08dc-89bcdfc5030c
 function makeRandomLabyrinthWithPath(n, m, p1, p2)
-	floodVal = 0.9
-	r = makeRandomLabyrinth(n, m)
-	generateCounter = 1
-	# entrance and exit must be free, of course
-	while r[p1.x, p1.y] != 1.0 || r[p2.x, p2.y] != 1.0
+	if mazeType == "random"
+		floodVal = 0.9
 		r = makeRandomLabyrinth(n, m)
-		generateCounter += 1
-	end
-	rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
-	while rf[p2.x, p2.y] != floodVal && generateCounter < 10
-		r = makeRandomLabyrinth(n, m)
-		generateCounter += 1
+		generateCounter = 1
+		# entrance and exit must be free, of course
+		while r[p1.x, p1.y] != 1.0 || r[p2.x, p2.y] != 1.0
+			r = makeRandomLabyrinth(n, m)
+			generateCounter += 1
+		end
 		rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
+		while rf[p2.x, p2.y] != floodVal && generateCounter < 10
+			r = makeRandomLabyrinth(n, m)
+			generateCounter += 1
+			rf = flood(copy(r), p1.x, p1.y, 1.0, floodVal)
+		end
+		println("Valid labyrinth after $generateCounter tries.")
+		r
 	end
-	println("Valid labyrinth after $generateCounter tries.")
-	r
 end
 
 # ╔═╡ f62e6a68-2c9e-11eb-0882-49b61e6864e3
@@ -418,10 +400,10 @@ function buildRandomMaze()
 end
 
 # ╔═╡ 6735d49a-2d98-11eb-1f5b-f9a7bb1a13e9
-md"branch cycles: $(@bind branchCycles Slider(1:100, default = 2, show_value=true))"
+md"branch cycles: $(@bind branchCycles Slider(1:300, default = 2, show_value=true))"
 
 # ╔═╡ 5ac695ca-2dc3-11eb-0c4e-61152a2cf867
-md"seed count: $(@bind seedCount Slider(1:100, default = 1, show_value=true))"
+md"seed count: $(@bind seedCount Slider(1:300, default = 1, show_value=true))"
 
 # ╔═╡ ebe9cbfe-2d83-11eb-3376-c3b1dd0cf3c7
 function buildBranchingMaze(mazeHeight, mazeWidth, env)
@@ -431,31 +413,33 @@ function buildBranchingMaze(mazeHeight, mazeWidth, env)
 
 	
 	heads = map(s-> placeSeed(s, start, goal, env) ,(1 : seedCount))
-	branches = copy(map(h -> Branch([h],[h, h], [false]), heads))
+	branches = copy(map(h -> Branch([h],[h], [false]), heads))
 	# ewolveBranches
 	for i in 1:branchCycles
 		for branch in branches
-		 grow(branch, env)
+		 	grow(branch, env)
 		end
 	end
 	
 	# write to maze
-	for branch in branches
-		for cell in branch.cells
-			env[cell.x, cell.y] = 0.0
-		end
-	end
-	(env, start, goal)
+	#for branch in branches
+	#	for cell in branch.cells
+	#		env[cell.x, cell.y] = 0.0
+	#	end
+	#end
+	(env, start, goal, branches)
 end
 
 # ╔═╡ 1467e648-2d86-11eb-1343-cdf9827acb86
 if mazeType == "random"
 	global(environment, start, goal) = buildRandomMaze()
+	global branches = []
 elseif mazeType == "branching"
 	env = makeEmptyLabyrinthWithPath(mazeHeight, mazeWidth)
-	global(environment, start, goal) = buildBranchingMaze(mazeHeight, mazeWidth, env)
+	global(environment, start, goal, branches) = buildBranchingMaze(mazeHeight, mazeWidth, env)
 else
 	global(environment, start, goal) = buildEmptyMaze(mazeHeight, mazeWidth)
+	global branches = []
 end
 
 
@@ -525,11 +509,7 @@ end
 
 # ╔═╡ 6ba2c8d4-2c2f-11eb-1643-41763d6c4706
 function showFuligo(f)
-	# TODO show labyrinth heads
-	
-	
-	
-    v = vis(enclose(environment, 0.7))
+	v = vis(enclose(environment, 0.7))
 	
 	visited = f.visited
 	for vis in visited
@@ -552,6 +532,14 @@ function showFuligo(f)
 	
 	v[start.x+1, start.y+1] = RGB(1.0,0.0,0.0)
 	v[goal.x+1, goal.y+1] = RGB(0.0,1.0,0.0)
+	
+	# TODO show labyrinth heads
+	
+	for branch in branches
+		for head in branch.heads
+			v[head.x+1, head.y+1] = RGB(0.0,1.0,0.9)
+		end
+	end
 	v
 end
 
@@ -634,14 +622,6 @@ end
 # ╠═0a371f6c-2d6e-11eb-0b6a-63d85a1928a0
 # ╠═47f540ba-2dcb-11eb-37c0-d5eb23030583
 # ╠═9f570da0-2dc8-11eb-122f-9992dc9b56c9
-# ╠═a8d1d1ac-2ddd-11eb-3bdf-b3b0810a6f90
-# ╠═107abaf8-2de0-11eb-3569-0307ade15455
-# ╠═2d4fafe8-2ddf-11eb-10ba-0140f68f427f
-# ╠═edff6e04-2ddf-11eb-3620-b3498e82f553
-# ╠═81404b50-2de2-11eb-1ec2-03ef8452a484
-# ╠═00e87274-2de3-11eb-0894-51974bf1539b
-# ╠═44c52d94-2ddd-11eb-0881-b9fc6253847c
-# ╠═d5f06ab2-2d6e-11eb-2966-21146aba3ebf
 # ╠═43e3f470-2d59-11eb-1e79-2ff78cadc866
 # ╠═2a1ebbfc-2d96-11eb-00e5-2588060691c8
 # ╠═86475416-2d85-11eb-0391-3576c0f73fc6
