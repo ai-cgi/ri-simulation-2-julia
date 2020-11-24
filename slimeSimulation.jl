@@ -156,34 +156,51 @@ end
 
 # ╔═╡ 0a371f6c-2d6e-11eb-0b6a-63d85a1928a0
 # return a square around the current position minus border
-function around(pos, env, branch)
-	candidates = [up(pos), right(up(pos)), left(up(pos)), down(pos), left(down(pos)), right(down(pos)), left(pos), right(pos)]
-	
-	(xMax, yMax) = size(env)
-	# && !(p ∈ branch.cells
-	filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax ), candidates)
-end
+#function around(pos, env, branch)
+#	candidates = [up(pos), right(up(pos)), left(up(pos)), down(pos), left(down(pos)), #right(down(pos)), left(pos), right(pos)]
+#	
+#	(xMax, yMax) = size(env)
+#	# && !(p ∈ branch.cells
+#	filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax ), candidates)
+#end
 
 # ╔═╡ 47f540ba-2dcb-11eb-37c0-d5eb23030583
-function validSize(pos, env, branch)
-	aroundCells = filter(p->env[p.x, p.y] == 1.0, around(pos, env, branch))
-	size(aroundCells, 1)	
-end
+#function validSize(pos, env, branch)
+#	aroundCells = filter(p->env[p.x, p.y] == 1.0, around(pos, env, branch))
+#	size(aroundCells, 1)	
+#end
 
 # ╔═╡ 9f570da0-2dc8-11eb-122f-9992dc9b56c9
-function validNeighbors(pos, env, branch)
-	candidates = [up(pos), down(pos), left(pos), right(pos)]
-	(xMax, yMax) = size(env)
-	filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax && env[p.x, p.y] == 1), candidates)
-	#println(   size(around(candidates[1],env, branch),1))
-	#println(   validSize(candidates[1], env, branch))
-	filter!(p->(size(around(p, env, branch), 1) <= (validSize(p, env, branch))+2 ), candidates)
-	#filter(p->( 8 >= (validSize(p, env, branch)) ), candidates)
-	if branch.touchesWall[1]
+begin
+	
+	# return a square around the current position minus border
+	function around(pos, env, branch)
+		candidates = [up(pos), right(up(pos)), left(up(pos)), down(pos), left(down(pos)), right(down(pos)), left(pos), right(pos)]
+	
 		(xMax, yMax) = size(env)
-		filter!(!(r->r.x<=0 || r.y<=0 || r.x>=xMax || r.y>=yMax), candidates)
+		# && !(p ∈ branch.cells
+		filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax  && env[p.x, p.y] == 0), candidates)
 	end
-	candidates
+	
+	function validSize(pos, env, branch)
+		aroundCells = filter(p->env[p.x, p.y] == 1.0, around(pos, env, branch))
+		size(aroundCells, 1)	
+	end
+	
+	function validNeighbors(pos, env, branch)
+		candidates = [up(pos), down(pos), left(pos), right(pos)]
+		(xMax, yMax) = size(env)
+		filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax && env[p.x, p.y] == 1), candidates)
+		#println(   size(around(candidates[1],env, branch),1))
+		#println(   validSize(candidates[1], env, branch))
+		filter!(p->(size(around(p, env, branch), 1) - (validSize(p, env, branch)) <= 2 ), candidates)
+		#filter(p->( 8 >= (validSize(p, env, branch)) ), candidates)
+		if branch.touchesWall[1]
+			(xMax, yMax) = size(env)
+			filter!(!(r->r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax), candidates)
+		end
+		candidates
+	end
 end
 
 # ╔═╡ 81404b50-2de2-11eb-1ec2-03ef8452a484
@@ -263,17 +280,26 @@ function grow(branch, env)
 	# TODO use for branching
 	headCandidates = filter(h -> ! (h ∈ branch.heads), branch.cells)
 	
-	activeHead = rand(branch.heads)
-	println(activeHead)
-	vn = validNeighbors(activeHead, env, branch)
-	println(vn)
-	if(size(vn,1)>0)
-		nextPos = rand(vn) 
-		push!(branch.cells, nextPos)
-		push!(branch.heads, nextPos)
-		env[nextPos.x, nextPos.y] = 0.0
-		filter!(h->h != activeHead, branch.heads)
-		println(branch)
+	if size(branch.heads,1)>0
+		activeHead = rand(branch.heads)
+		println(activeHead)
+		vn = validNeighbors(activeHead, env, branch)
+		println(vn)
+		if(size(vn,1)>0)
+			nextPos = rand(vn) 
+			push!(branch.cells, nextPos)
+			push!(branch.heads, nextPos)
+			env[nextPos.x, nextPos.y] = 0.0
+			filter!(h->h != activeHead, branch.heads)
+			println(branch)
+			r = nextPos
+			(xMax, yMax) = size(env)
+			if r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax
+				branch.touchesWall[1] = true
+			end
+		else
+			filter!(h->h != activeHead, branch.heads)
+		end
 	end
 	branch
 end
@@ -405,11 +431,11 @@ function buildBranchingMaze(mazeHeight, mazeWidth, env)
 
 	
 	heads = map(s-> placeSeed(s, start, goal, env) ,(1 : seedCount))
-	branches = copy(map(h -> Branch([h],[h, h], [true]), heads))
+	branches = copy(map(h -> Branch([h],[h, h], [false]), heads))
 	# ewolveBranches
 	for i in 1:branchCycles
 		for branch in branches
-		 grow(branch, env) #TODO alle branches
+		 grow(branch, env)
 		end
 	end
 	
@@ -499,6 +525,10 @@ end
 
 # ╔═╡ 6ba2c8d4-2c2f-11eb-1643-41763d6c4706
 function showFuligo(f)
+	# TODO show labyrinth heads
+	
+	
+	
     v = vis(enclose(environment, 0.7))
 	
 	visited = f.visited
