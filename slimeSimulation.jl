@@ -179,9 +179,7 @@ begin
 	
 		(xMax, yMax) = size(env)
 		
-		filter!(p -> 
-			(0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax),
-			candidates)
+		filter!(p -> isInMaze(p, env), candidates)
 	end
 	
 	function validSize(pos, env, branch)
@@ -297,14 +295,15 @@ begin
 end
 
 # ╔═╡ 86475416-2d85-11eb-0391-3576c0f73fc6
-function makeEmptyLabyrinthWithPath(n, m)
+function makeEmptyLabyrinth(n, m)
 	rand([1.0], n, m) 
 end
 
 # ╔═╡ bc4a3044-2dc4-11eb-06cc-1ff253a196be
 function placeSeed(s, start, goal, env)
 	(width, height) = size(env)
-	Pos(rand(2:width-1), rand(2:height-1))
+	seed = Pos(rand(2:width-1), rand(2:height-1))
+	
 end
 
 # ╔═╡ 1f8d50d0-2d86-11eb-30d0-7f9de19e8a30
@@ -313,7 +312,7 @@ function buildEmptyMaze(mazeHeight, mazeWidth)
 		m = mazeWidth
 		start = Pos(1,1)
 		goal  = Pos(n,m)
-		env = makeEmptyLabyrinthWithPath(n, m)
+		env = makeEmptyLabyrinth(n, m)
 	
 	(env, start, goal)
 end
@@ -400,7 +399,7 @@ function buildRandomMaze()
 end
 
 # ╔═╡ 6735d49a-2d98-11eb-1f5b-f9a7bb1a13e9
-md"branch cycles: $(@bind branchCycles Slider(1:300, default = 2, show_value=true))"
+md"branch cycles: $(@bind branchCycles Slider(1:600, default = 2, show_value=true))"
 
 # ╔═╡ 5ac695ca-2dc3-11eb-0c4e-61152a2cf867
 md"seed count: $(@bind seedCount Slider(1:300, default = 1, show_value=true))"
@@ -409,11 +408,9 @@ md"seed count: $(@bind seedCount Slider(1:300, default = 1, show_value=true))"
 function buildBranchingMaze(mazeHeight, mazeWidth, env)
 	start = Pos(1,1)
 	goal  = Pos(mazeHeight,mazeWidth)
-	env = makeEmptyLabyrinthWithPath(mazeHeight,mazeWidth)
-
 	
 	heads = map(s-> placeSeed(s, start, goal, env) ,(1 : seedCount))
-	branches = copy(map(h -> Branch([h],[h], [false]), heads))
+	branches = copy(map(h -> Branch([h],[h, h], [false]), heads))
 	# ewolveBranches
 	for i in 1:branchCycles
 		for branch in branches
@@ -435,7 +432,7 @@ if mazeType == "random"
 	global(environment, start, goal) = buildRandomMaze()
 	global branches = []
 elseif mazeType == "branching"
-	env = makeEmptyLabyrinthWithPath(mazeHeight, mazeWidth)
+	env = makeEmptyLabyrinth(mazeHeight, mazeWidth)
 	global(environment, start, goal, branches) = buildBranchingMaze(mazeHeight, mazeWidth, env)
 else
 	global(environment, start, goal) = buildEmptyMaze(mazeHeight, mazeWidth)
