@@ -154,22 +154,6 @@ struct Branch
 	touchesWall
 end
 
-# ╔═╡ 0a371f6c-2d6e-11eb-0b6a-63d85a1928a0
-# return a square around the current position minus border
-#function around(pos, env, branch)
-#	candidates = [up(pos), right(up(pos)), left(up(pos)), down(pos), left(down(pos)), #right(down(pos)), left(pos), right(pos)]
-#	
-#	(xMax, yMax) = size(env)
-#	# && !(p ∈ branch.cells
-#	filter!(p -> (0 < p.x && 0 < p.y && p.x <= xMax && p.y <= yMax ), candidates)
-#end
-
-# ╔═╡ 47f540ba-2dcb-11eb-37c0-d5eb23030583
-#function validSize(pos, env, branch)
-#	aroundCells = filter(p->env[p.x, p.y] == 1.0, around(pos, env, branch))
-#	size(aroundCells, 1)	
-#end
-
 # ╔═╡ 9f570da0-2dc8-11eb-122f-9992dc9b56c9
 begin
 	
@@ -253,47 +237,6 @@ begin
 	end
 end
 
-# ╔═╡ 43e3f470-2d59-11eb-1e79-2ff78cadc866
-function grow(branch, env)
-	# TODO use for branching
-	headCandidates = filter(h -> ! (h ∈ branch.heads), branch.cells)
-	
-	if size(branch.heads,1)>0
-		activeHead = rand(branch.heads)
-		#println(activeHead)
-		vn = validNeighbors(activeHead, env, branch)
-		#println(vn)
-		if(size(vn,1)>0)
-			nextPos = rand(vn) 
-			push!(branch.cells, nextPos)
-			push!(branch.heads, nextPos)
-			env[nextPos.x, nextPos.y] = 0.0
-			filter!(h->h != activeHead, branch.heads)
-			#println(branch)
-			r = nextPos
-			(xMax, yMax) = size(env)
-			if r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax
-				branch.touchesWall[1] = true
-			end
-		else
-			filter!(h->h != activeHead, branch.heads)
-		end
-	end
-	branch
-end
-
-# ╔═╡ 2a1ebbfc-2d96-11eb-00e5-2588060691c8
-#with_terminal() do
-begin
-	e = [[1.0 1.0 1.0]
-		[1.0 0.0 1.0]
-		[1.0 1.0 1.0]
-		[1.0 1.0 1.0]
-		[1.0 1.0 1.0]]
-	println(size(e))
-	grow(Branch([Pos(2,2)],[Pos(2,2)], [false]), copy(e))
-end
-
 # ╔═╡ 86475416-2d85-11eb-0391-3576c0f73fc6
 function makeEmptyLabyrinth(n, m)
 	rand([1.0], n, m) 
@@ -354,6 +297,7 @@ function makeRandomLabyrinth(n, m)
 	ratio = mazeDensity
 	randomData = push!(vec(fill(1.0, (100-ratio,1))), vec(fill(0.0, (ratio,1)))...)
 	arr = rand(randomData, n, m) #[0.0,1.0,1.0]
+	println("size:", size(arr))
 end
 
 # ╔═╡ 74d89c8e-10b5-11eb-08dc-89bcdfc5030c
@@ -376,6 +320,57 @@ function makeRandomLabyrinthWithPath(n, m, p1, p2)
 		println("Valid labyrinth after $generateCounter tries.")
 		r
 	end
+end
+
+# ╔═╡ 90bcedd8-2f5c-11eb-0e57-ff5998603b15
+md"branching: $(@bind branchPropability Slider(1:100, default = 30, show_value=true))"
+
+# ╔═╡ 43e3f470-2d59-11eb-1e79-2ff78cadc866
+function grow(branch, env)
+	# TODO use for branching
+	if(branchPropability >= rand(1:100))
+		headCandidates = filter(h -> ! (h ∈ branch.heads), branch.cells)
+		if(size(headCandidates, 1)>0)
+			validHeadCandidates = validNeighbors(rand(headCandidates), env, branch)	
+			if(size(headCandidates, 1)>0)
+				newHead = rand(headCandidates)
+				push!(branch.heads, newHead)
+			end
+		end
+	end
+	
+	
+	if size(branch.heads,1)>0
+		activeHead = rand(branch.heads)
+		vn = validNeighbors(activeHead, env, branch)
+		if(size(vn,1)>0)
+			nextPos = rand(vn) 
+			push!(branch.cells, nextPos)
+			push!(branch.heads, nextPos)
+			env[nextPos.x, nextPos.y] = 0.0
+			filter!(h->h != activeHead, branch.heads)
+			r = nextPos
+			(xMax, yMax) = size(env)
+			if r.x<=1 || r.y<=1 || r.x>=xMax || r.y>=yMax
+				branch.touchesWall[1] = true
+			end
+		else
+			filter!(h->h != activeHead, branch.heads)
+		end
+	end
+	branch
+end
+
+# ╔═╡ 2a1ebbfc-2d96-11eb-00e5-2588060691c8
+#with_terminal() do
+begin
+	e = [[1.0 1.0 1.0]
+		[1.0 0.0 1.0]
+		[1.0 1.0 1.0]
+		[1.0 1.0 1.0]
+		[1.0 1.0 1.0]]
+	println(size(e))
+	grow(Branch([Pos(2,2)],[Pos(2,2)], [false]), copy(e))
 end
 
 # ╔═╡ f62e6a68-2c9e-11eb-0882-49b61e6864e3
@@ -410,11 +405,13 @@ function buildBranchingMaze(mazeHeight, mazeWidth, env)
 	goal  = Pos(mazeHeight,mazeWidth)
 	
 	heads = map(s-> placeSeed(s, start, goal, env) ,(1 : seedCount))
-	branches = copy(map(h -> Branch([h],[h, h], [false]), heads))
+	branches = copy(map(h -> Branch([h],[h, h, h], [false]), heads))
+	mazes = [env] 
 	# ewolveBranches
 	for i in 1:branchCycles
 		for branch in branches
 		 	grow(branch, env)
+			push!(mazes, copy(env))
 		end
 	end
 	
@@ -424,19 +421,21 @@ function buildBranchingMaze(mazeHeight, mazeWidth, env)
 	#		env[cell.x, cell.y] = 0.0
 	#	end
 	#end
-	(env, start, goal, branches)
+	(env, start, goal, branches, mazes)
 end
 
 # ╔═╡ 1467e648-2d86-11eb-1343-cdf9827acb86
 if mazeType == "random"
 	global(environment, start, goal) = buildRandomMaze()
 	global branches = []
+	global mazes = [env]
 elseif mazeType == "branching"
 	env = makeEmptyLabyrinth(mazeHeight, mazeWidth)
-	global(environment, start, goal, branches) = buildBranchingMaze(mazeHeight, mazeWidth, env)
+	global(environment, start, goal, branches, mazes) = buildBranchingMaze(mazeHeight, mazeWidth, env)
 else
 	global(environment, start, goal) = buildEmptyMaze(mazeHeight, mazeWidth)
 	global branches = []
+	global mazes = [env]
 end
 
 
@@ -540,6 +539,9 @@ function showFuligo(f)
 	v
 end
 
+# ╔═╡ 7a33eca6-2f61-11eb-396c-9370f83b61a2
+md"maze step: $(@bind mazeStep Slider(1:length(mazes), default = 1, show_value=true))"
+
 # ╔═╡ bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
 #with_terminal() do 
 	fuligo = expand()
@@ -552,7 +554,12 @@ md"step: $(@bind fStep Slider(1:length(fuligo), default = 1, show_value=true))"
 md"one minimal path is $(length(fuligo[end].paths[goal])) steps long"
 
 # ╔═╡ 98f1647e-2c30-11eb-3f17-a92df4c7e9be
-showFuligo(fuligo[fStep])
+begin
+	if(mazeStep>1)
+		copyto!(environment, mazes[mazeStep])
+	end
+	showFuligo(fuligo[fStep])
+end
 
 # ╔═╡ 1df51b90-277d-11eb-3df1-b5f6c4a123fb
 md"# Misc Tests & Experiments"
@@ -604,7 +611,7 @@ end
 # ╠═74d89c8e-10b5-11eb-08dc-89bcdfc5030c
 # ╠═83602dc0-1126-11eb-3632-e7de171beefd
 # ╠═bbadf27a-2d82-11eb-0145-537378cddfde
-# ╠═6308cb50-109e-11eb-20d8-3999269f6b41
+# ╟─6308cb50-109e-11eb-20d8-3999269f6b41
 # ╠═0c84c5ee-109d-11eb-298f-d938ebce3865
 # ╠═3e51e86e-109c-11eb-3c8a-f9f613e454d7
 # ╠═d5990fa0-109d-11eb-1e3a-31f426f6600d
@@ -616,8 +623,6 @@ end
 # ╠═b240f540-10a2-11eb-37f6-dbe5571bd876
 # ╟─60493b8e-2d59-11eb-2a1c-f5c9016ef152
 # ╠═e326a362-2d58-11eb-0a7c-d5105081b4a4
-# ╠═0a371f6c-2d6e-11eb-0b6a-63d85a1928a0
-# ╠═47f540ba-2dcb-11eb-37c0-d5eb23030583
 # ╠═9f570da0-2dc8-11eb-122f-9992dc9b56c9
 # ╠═43e3f470-2d59-11eb-1e79-2ff78cadc866
 # ╠═2a1ebbfc-2d96-11eb-00e5-2588060691c8
@@ -633,13 +638,15 @@ end
 # ╠═6ba2c8d4-2c2f-11eb-1643-41763d6c4706
 # ╠═88ad4fa2-2d86-11eb-1619-59ec21e70a82
 # ╟─d9b1930c-2ca2-11eb-08ef-316ff1de6859
+# ╟─90bcedd8-2f5c-11eb-0e57-ff5998603b15
 # ╟─f62e6a68-2c9e-11eb-0882-49b61e6864e3
 # ╟─9b5f5a4c-2c9f-11eb-1859-dd4a15669a17
 # ╟─6735d49a-2d98-11eb-1f5b-f9a7bb1a13e9
 # ╟─5ac695ca-2dc3-11eb-0c4e-61152a2cf867
 # ╟─303cc1bc-2da2-11eb-2737-852198e8a6fd
 # ╟─7a2390c4-2c30-11eb-3ecc-cb0817f36cb0
-# ╟─0b590ab2-2cc0-11eb-03a9-b54366a73e12
+# ╟─7a33eca6-2f61-11eb-396c-9370f83b61a2
+# ╠═0b590ab2-2cc0-11eb-03a9-b54366a73e12
 # ╠═98f1647e-2c30-11eb-3f17-a92df4c7e9be
 # ╠═bbb98ffc-2c30-11eb-13d2-bd43c7ef0560
 # ╠═1df51b90-277d-11eb-3df1-b5f6c4a123fb
