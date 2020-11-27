@@ -125,31 +125,36 @@ function get_reward()
   return 0
 end
 
-"building a monte carlo search tree"
-function build_tree(tree, agt)
-  tree_key = get_state_for_agent(agt)
-  println(tree_key)
-  if is_final_state()
-    tree    
-  else 
-    if !haskey(tree, tree_key)
-      pos_actions = get_possible_actions()
+"create search tree for searching"
+function create_tree(tree, state_string)
+  println("State:",state_string)
+  if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
+    tree[state_string] = "target"
+    tree
+  else
+     if !haskey(tree, state_string)
+      agt = set_state_for_agent(string_to_state(state_string))
+      pos_actions = get_possible_actions(agt)
       sub_tree = Dict()
       for act in pos_actions
-        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", last_action, "(",agt,")"))))
+        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")"))))
+        agt = set_state_for_agent(string_to_state(state_string))
       end
-      tree[tree_key] = sub_tree      
-    end
+      tree[state_string] = sub_tree
+      map(v -> create_tree(tree, v) , values(sub_tree))
+      filter(!isnothing, tree)      
+    end 
   end
 end
 
-function create_tree(tree, state_string)
-  agt = set_state_for_agent(string_to_state(state_string))
-  if !is_in_final_state(agt) 
-    
-  
-  end 
-end
- 
-
+"function to visualize trees based on dictionary relations by given start_key"
+function visualize_tree(tree_dict, key, dot_string)
+  if string(tree_dict[key]) == "target"
+    println("Taget reached.....")
+    dot_string = string(dot_string, "}\n")
+  else     
+    # map(v -> visualize_tree(tree_dict, v, dot_string),values(tree_dict[key]))
+    println(values(tree_dict[key]))
+  end  
+end   
 
