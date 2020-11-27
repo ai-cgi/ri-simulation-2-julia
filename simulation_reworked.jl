@@ -45,6 +45,18 @@ agent_x = Agent(Offset(10,5),0)
 function get_state_for_agent(agent)
          string("S_",agent.pos.x,"_",agent.pos.y)
 end
+ 
+function set_state_for_agent(state)
+  Agent(state.pos, 0)
+end
+
+function state_to_string(state)
+  string("S_",state.pos.x,"_",state.pos.y)
+end
+
+function string_to_state(str)
+  State(Offset(parse(Int, split(str, "_")[2]),parse(Int, split(str, "_")[3]))) 
+end
 
 
 function get_possible_actions(agent)
@@ -131,19 +143,13 @@ function build_tree(tree, agt)
   end
 end
 
-function create_tree(tree, agt)
-   tree_key = get_state_for_agent(agt)
-   println(tree_key)
-    if is_in_final_state(agt)
-       tree    
-   else
-        pos_actions = get_possible_actions(agt)
-        sub_tree = Dict()
-        for act in pos_actions
-            sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", last_action, "(",agt,")"))))
-        end
-        tree[tree_key] = sub_tree
-   end
+function create_tree(tree, state_string)
+  agt = set_state_for_agent(string_to_state(state_string))
+  if !is_in_final_state(agt) 
+    
+  
+  end 
 end
+ 
 
 
