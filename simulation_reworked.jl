@@ -1,5 +1,4 @@
-include("datatypes.jl")
-include("gui.jl")
+include("datatypes_reworked.jl")
 
 # Define an environment for the simulation
 
@@ -16,10 +15,7 @@ env_matrix = [[1 1 1 1 1 1 1 1 1 1]
 
 possible_actions = []
 final_state = State(Offset(10,3))
-initial_state = State(Offset(10,5)
-
-"Collect rewards based on action"
-reward_action_dict = Dict("left" => ActionValue(0,0), "right" => ActionValue(0,0), "up" => ActionValue(0,0), "down" => ActionValue(0,0))
+initial_state = State(Offset(10,5))
 
 # defining all rewards
 reward_1 = Reward(Offset(5,5), Offset(0,0),3)
@@ -38,8 +34,7 @@ last_action = "up"
 number_of_steps = 0
 
 # create agent
-agent_x = Agent(Offset(5,10),0)
-env_offsets = initialize_gui(reward_list, agent_x)
+agent_x = Agent(Offset(10,5),0)
 
 # select row
 # environment[1,:]
@@ -72,22 +67,22 @@ end
 
 # implement agent movement
 function move_agent_up(agent)
-  agent.sim_offset.y = agent_x.sim_offset.y - 1
+  agent.pos.x = agent.pos.x - 1
   agent
 end
 
 function move_agent_down(agent)
-  agent.sim_offset.y = agent_x.sim_offset.y + 1
+  agent.pos.x = agent.pos.x + 1
   agent
 end
 
 function move_agent_right(agent)
-  agent.sim_offset.x = agent_x.sim_offset.x + 1
+  agent.pos.y = agent.pos.y + 1
   agent
 end
 
 function move_agent_left(agent)
-  agent.sim_offset.x = agent_x.sim_offset.x - 1
+  agent.pos.y = agent.pos.y - 1
   agent
 end
 
@@ -98,12 +93,12 @@ end
 
 "check if agent is in final state"
 function is_final_state(state)
-  equal_offset(state.pos,final_state)
+  equal_offset(state.pos,final_state.pos)
 end
 
 "check if state is final state"
-function is_in_final_atate(agent)
-  equal_offset(agent.pos,final_state)
+function is_in_final_state(agent)
+  equal_offset(agent.pos,final_state.pos)
 end
 
 "check if agent on current position get's a reward"
@@ -135,3 +130,20 @@ function build_tree(tree, agt)
     end
   end
 end
+
+function create_tree(tree, agt)
+   tree_key = get_state_for_agent(agt)
+   println(tree_key)
+    if is_in_final_state(agt)
+       tree    
+   else
+        pos_actions = get_possible_actions(agt)
+        sub_tree = Dict()
+        for act in pos_actions
+            sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", last_action, "(",agt,")"))))
+        end
+        tree[tree_key] = sub_tree
+   end
+end
+
+
