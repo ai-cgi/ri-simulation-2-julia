@@ -8,6 +8,11 @@ struct State
   pos::Offset
 end
 
+mutable struct Edge
+    visited::Boolean
+    target::String
+end
+
 function equal_offset(offset1::Offset, offset2::Offset)
     (offset1.x == offset2.x) && (offset1.y == offset2.y)
 end

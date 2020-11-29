@@ -127,7 +127,6 @@ end
 
 "create search tree for searching"
 function create_tree(tree, state_string)
-  println("State:",state_string)
   if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
     tree[state_string] = "target"
     tree
@@ -137,24 +136,28 @@ function create_tree(tree, state_string)
       pos_actions = get_possible_actions(agt)
       sub_tree = Dict()
       for act in pos_actions
-        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")"))))
+        sub_tree[act] = Edge(false, get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")")))))
         agt = set_state_for_agent(string_to_state(state_string))
       end
       tree[state_string] = sub_tree
-      map(v -> create_tree(tree, v) , values(sub_tree))
-      filter(!isnothing, tree)      
+      # map(v -> create_tree(tree, v) , values(sub_tree))
+      # filter(!isnothing, tree)
+      for s in values(sub_tree)
+          create_tree(tree,s.target)
+      end       
     end 
   end
+    tree
 end
 
 "function to visualize trees based on dictionary relations by given start_key"
 function visualize_tree(tree_dict, key, dot_string)
-  if string(tree_dict[key]) == "target"
+   if string(tree_dict[key]) == "target"
     println("Taget reached.....")
     dot_string = string(dot_string, "}\n")
-  else     
-    # map(v -> visualize_tree(tree_dict, v, dot_string),values(tree_dict[key]))
-    println(values(tree_dict[key]))
-  end  
+   else
+      
+   end
+  dot_string  
 end   
 
