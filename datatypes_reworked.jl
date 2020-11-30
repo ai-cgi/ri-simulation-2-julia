@@ -9,7 +9,7 @@ struct State
 end
 
 mutable struct Edge
-    visited::Boolean
+    visited::Bool
     target::String
 end
 

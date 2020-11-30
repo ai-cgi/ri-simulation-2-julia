@@ -150,14 +150,23 @@ function create_tree(tree, state_string)
     tree
 end
 
+
 "function to visualize trees based on dictionary relations by given start_key"
 function visualize_tree(tree_dict, key, dot_string)
-   if string(tree_dict[key]) == "target"
-    println("Taget reached.....")
-    dot_string = string(dot_string, "}\n")
-   else
-      
+   println(key)
+   edges = tree_dict[key]
+    if length(filter(v -> v.visited, collect(values(edges)))) == 0
+        println("Target reached.....")
+        string(dot_string,"}\n")
+    else
+       for ke in keys(edges)
+           edge = edges[ke]
+           if !edge.visited
+               edge.visited = true
+               dot_string = string(dot_string, key, " -> ", edge.target, " [label=$ke]\n")
+               visualize_tree(tree_dict, edge.target, dot_string)
+           end
+       end     
    end
   dot_string  
 end   
-
