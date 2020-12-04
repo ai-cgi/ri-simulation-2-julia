@@ -128,7 +128,7 @@ end
 "create search tree for searching"
 function create_tree(tree, state_string)
   if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
-    tree[state_string] = Dict("none" => Edge(false,"S_10_3"))
+    tree[state_string] = Dict(Leaf("final",false) => "S_10_3"))
     tree
   else
      if !haskey(tree, state_string)
@@ -136,12 +136,10 @@ function create_tree(tree, state_string)
       pos_actions = get_possible_actions(agt)
       sub_tree = Dict()
       for act in pos_actions
-        sub_tree[act] = Edge(false, get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")")))))
+        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")"))))
         agt = set_state_for_agent(string_to_state(state_string))
       end
-      tree[state_string] = sub_tree
-      # map(v -> create_tree(tree, v) , values(sub_tree))
-      # filter(!isnothing, tree)
+      tree[Leaf(state_string,false)] = sub_tree
       for s in values(sub_tree)
           create_tree(tree,s.target)
       end       
