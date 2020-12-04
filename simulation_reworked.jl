@@ -152,20 +152,20 @@ end
 
 "function to visualize trees based on dictionary relations by given start_key"
 function visualize_tree(tree_dict, key, dot_string)
-   println(key)
+   println("->", dot_string)
    edges = tree_dict[key]
-   edges_to_go = filter(v -> !v.visited, collect(values(edges))) 
+   edges_to_go = filter((k,v) -> !v.visited, edges) 
     if length(edges_to_go) == 0
-        println("Target reached.....")
-        dot_string = string(dot_string,"}\n")
+        println("Dead End....")
     else
        for ke in keys(edges_to_go)
            edge = edges_to_go[ke]
            if !edge.visited
                edge.visited = true
-               dot_string = string(dot_string, key, " -> ", edge.target, " [label=$ke]\n")
+               dot_string = string(dot_string, key, " -> ", edge.target, " [label=",ke,"]\n")
+               dot_string = visualize_tree(tree_dict, edge.target, dot_string)
            end
        end     
    end
-  dot_string  
+  dot_string 
 end   
