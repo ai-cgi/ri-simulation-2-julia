@@ -13,6 +13,11 @@ mutable struct Edge
     target::String
 end
 
+mutable struct Leaf
+    visited::Bool
+    id::String
+end
+
 function equal_offset(offset1::Offset, offset2::Offset)
     (offset1.x == offset2.x) && (offset1.y == offset2.y)
 end
