@@ -43,7 +43,7 @@ agent_x = Agent(Offset(10,5),0)
 # environment[:,1]
 
 function get_state_for_agent(agent)
-         string("S_",agent.pos.x,"_",agent.pos.y)
+         string(agent.pos.x,".",agent.pos.y)
 end
  
 function set_state_for_agent(state)
@@ -51,13 +51,12 @@ function set_state_for_agent(state)
 end
 
 function state_to_string(state)
-  string("S_",state.pos.x,"_",state.pos.y)
+  string(state.pos.x,".",state.pos.y)
 end
 
 function string_to_state(str)
-  State(Offset(parse(Int, split(str, "_")[2]),parse(Int, split(str, "_")[3]))) 
+  State(Offset(parse(Int, split(str, ".")[1]),parse(Int, split(str, ".")[2]))) 
 end
-
 
 function get_possible_actions(agent)
   possible_actions = []
@@ -128,7 +127,7 @@ end
 "create search tree for searching"
 function create_tree(tree, state_string)
   if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
-    tree[state_string] = Dict(Leaf("final",false) => "S_10_3")
+    tree[state_string] = Dict()
     tree
   else
      if !haskey(tree, state_string)
@@ -136,12 +135,15 @@ function create_tree(tree, state_string)
       pos_actions = get_possible_actions(agt)
       sub_tree = Dict()
       for act in pos_actions
-        sub_tree[act] = get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")"))))
-        agt = set_state_for_agent(string_to_state(state_string))
+        target = get_state_for_agent(eval(Meta.parse(string("move_agent_", act, "(",agt,")"))))
+        if !haskey(tree,target)
+           sub_tree[act] = target
+        end
+           agt = set_state_for_agent(string_to_state(state_string))
       end
-      tree[Leaf(state_string,false)] = sub_tree
+      tree[state_string] = sub_tree
       for s in values(sub_tree)
-          create_tree(tree,s.target)
+        create_tree(tree,s)     
       end       
     end 
   end
@@ -152,18 +154,14 @@ end
 function visualize_tree(tree_dict, key, dot_string)
    println("->", dot_string)
    edges = tree_dict[key]
-   edges_to_go = filter((k,v) -> !v.visited, edges) 
-    if length(edges_to_go) == 0
+    if length(edges) == 0
         println("Dead End....")
     else
-       for ke in keys(edges_to_go)
-           edge = edges_to_go[ke]
-           if !edge.visited
-               edge.visited = true
-               dot_string = string(dot_string, key, " -> ", edge.target, " [label=",ke,"]\n")
-               dot_string = visualize_tree(tree_dict, edge.target, dot_string)
-           end
-       end     
+       for ke in keys(edges)
+           edge = edges[ke]
+           dot_string = string(dot_string, key, " -> ", edge, " [label=",first(ke),"]\n")
+           dot_string = visualize_tree(tree_dict, edge, dot_string)
+      end     
    end
   dot_string 
 end   
