@@ -128,7 +128,7 @@ end
 "create search tree for searching"
 function create_tree(tree, state_string)
   if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
-    tree[state_string] = "target"
+    tree[state_string] = Dict("none" => Edge(false,"S_10_3"))
     tree
   else
      if !haskey(tree, state_string)
@@ -150,21 +150,20 @@ function create_tree(tree, state_string)
     tree
 end
 
-
 "function to visualize trees based on dictionary relations by given start_key"
 function visualize_tree(tree_dict, key, dot_string)
    println(key)
    edges = tree_dict[key]
-    if length(filter(v -> v.visited, collect(values(edges)))) == 0
+   edges_to_go = filter(v -> !v.visited, collect(values(edges))) 
+    if length(edges_to_go) == 0
         println("Target reached.....")
-        string(dot_string,"}\n")
+        dot_string = string(dot_string,"}\n")
     else
-       for ke in keys(edges)
-           edge = edges[ke]
+       for ke in keys(edges_to_go)
+           edge = edges_to_go[ke]
            if !edge.visited
                edge.visited = true
                dot_string = string(dot_string, key, " -> ", edge.target, " [label=$ke]\n")
-               visualize_tree(tree_dict, edge.target, dot_string)
            end
        end     
    end
