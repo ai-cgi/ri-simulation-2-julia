@@ -128,7 +128,7 @@ end
 "create search tree for searching"
 function create_tree(tree, state_string)
   if is_in_final_state(set_state_for_agent(string_to_state(state_string))) 
-    tree[state_string] = Dict(Leaf("final",false) => "S_10_3"))
+    tree[state_string] = Dict(Leaf("final",false) => "S_10_3")
     tree
   else
      if !haskey(tree, state_string)

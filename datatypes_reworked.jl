@@ -14,8 +14,8 @@ mutable struct Edge
 end
 
 mutable struct Leaf
-    visited::Bool
     id::String
+    visited::Bool
 end
 
 function equal_offset(offset1::Offset, offset2::Offset)
