@@ -155,7 +155,6 @@ function visualize_tree(tree_dict, key, dot_string)
    println("->", dot_string)
    edges = tree_dict[key]
     if length(edges) == 0
-        println("Dead End....")
     else
        for ke in keys(edges)
            edge = edges[ke]
@@ -165,3 +164,9 @@ function visualize_tree(tree_dict, key, dot_string)
    end
   dot_string 
 end   
+
+graphviz_start = """digraph {    
+  node [shape="circle", style="filled", fillColor="#AAAAAA"]
+  edge [color="#AAAAAA", fontcolor="#AAAAAA"]    
+  10.3 [color="darkgreen", fontcolor="white"]
+  10.5 [color="#AA0000", fontcolor="white"]"""
