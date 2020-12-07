@@ -19,13 +19,13 @@ initial_state = State(Offset(10,5))
 
 # defining all rewards
 reward_1 = Reward(Offset(5,5), Offset(0,0),3)
-reward_2 = Reward(Offset(7,5), Offset(0,0),3)
-reward_3 = Reward(Offset(7,9), Offset(0,0),3)
-reward_4 = Reward(Offset(10,9), Offset(0,0),3)
-reward_5 = Reward(Offset(10,6), Offset(0,0),3)
-reward_6 = Reward(Offset(9,3), Offset(0,0),3)
+reward_2 = Reward(Offset(5,7), Offset(0,0),3)
+reward_3 = Reward(Offset(9,7), Offset(0,0),3)
+reward_4 = Reward(Offset(9,10), Offset(0,0),3)
+reward_5 = Reward(Offset(6,10), Offset(0,0),3)
+reward_6 = Reward(Offset(3,9), Offset(0,0),3)
 reward_7 = Reward(Offset(3,3), Offset(0,0),3)
-reward_8 = Reward(Offset(3,10), Offset(0,0),100)
+reward_8 = Reward(Offset(10,3), Offset(0,0),100)
 
 # create reward list
 reward_list = [reward_1, reward_2, reward_3, reward_4, reward_5, reward_6, reward_7, reward_8]
@@ -165,8 +165,19 @@ function visualize_tree(tree_dict, key, dot_string)
   dot_string 
 end   
 
-graphviz_start = """digraph {    
-  node [shape="circle", style="filled", fillColor="#AAAAAA"]
-  edge [color="#AAAAAA", fontcolor="#AAAAAA"]    
-  10.3 [color="darkgreen", fontcolor="white"]
-  10.5 [color="#AA0000", fontcolor="white"]"""
+graphviz_start = """digraph {\n    
+      node [shape="circle", style="filled", fillColor="#AAAAAA"]\n
+      edge [color="#AAAAAA", fontcolor="#AAAAAA"]\n"""    
+  
+function highlist_start_stop(graphviz_str, start_state, end_state)
+  graphviz_str = string(graphviz_str, """ $start_state [color="darkgreen", fontcolor="white"]\n""")
+  graphviz_str = string(graphviz_str, """ $end_state [color="#AA0000", fontcolor="white"]\n""")
+end
+
+function add_rewards_to_graphviz_str(graphviz_str)
+  for r in reward_list
+    graphviz_str = string(graphviz_str, r.sim_offset.x, ".", r.sim_offset.y, """[color="orange"]\n""")
+  end
+  graphviz_str
+end
+
